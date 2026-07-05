@@ -37,8 +37,7 @@ import com.example.ui.viewmodels.TransactionType
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.ui.utils.toFormattedDateString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Suppress("DEPRECATION")
@@ -61,7 +60,7 @@ fun ReportScreen(
         reportState.summaries.map { it.employeeName to it.employeeId }.distinctBy { it.second }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(key1 = true) {
         reportViewModel.loadReports(selectedFilter)
     }
 
@@ -260,7 +259,7 @@ fun TransactionCard(tx: TransactionItem, currency: String) {
         TransactionType.DEDUCTION -> "خصم"
     }
 
-    val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale.forLanguageTag("ar")) }
+    val dateString = tx.date.toFormattedDateString()
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -288,7 +287,7 @@ fun TransactionCard(tx: TransactionItem, currency: String) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = " • ${dateFormatter.format(Date(tx.date))}",
+                        text = " • $dateString",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -318,7 +317,7 @@ fun shareExcel(context: Context, transactions: List<TransactionItem>, currency: 
         val writer = file.bufferedWriter()
         writer.write('\uFEFF'.toString()) // BOM for Excel UTF-8
         writer.write("اسم الموظف,النوع,المبلغ ($currency),التاريخ,الملاحظات\n")
-        val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.forLanguageTag("ar"))
+        
         for (tx in transactions) {
             val typeStr = when (tx.type) {
                 TransactionType.WAGE -> "أجر"
@@ -326,7 +325,7 @@ fun shareExcel(context: Context, transactions: List<TransactionItem>, currency: 
                 TransactionType.BONUS -> "مكافأة"
                 TransactionType.DEDUCTION -> "خصم"
             }
-            writer.write("${tx.employeeName},$typeStr,${tx.amount},${dateFormatter.format(Date(tx.date))},${tx.description.replace(","," ")}\n")
+            writer.write("${tx.employeeName},$typeStr,${tx.amount},${tx.date.toFormattedDateString()},${tx.description.replace(","," ")}\n")
         }
         writer.close()
 
@@ -358,7 +357,6 @@ fun sharePdf(context: Context, transactions: List<TransactionItem>, currency: St
         canvas.drawText("تقرير الأجور والسحوبات", 200f, yPos, paint)
         yPos += 40f
 
-        val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.forLanguageTag("ar"))
         for (tx in transactions) {
             if (yPos > 800f) {
                 document.finishPage(page)
@@ -370,7 +368,7 @@ fun sharePdf(context: Context, transactions: List<TransactionItem>, currency: St
                 TransactionType.BONUS -> "مكافأة"
                 TransactionType.DEDUCTION -> "خصم"
             }
-            val text = "${tx.employeeName} | $typeStr | ${tx.amount} $currency | ${dateFormatter.format(Date(tx.date))}"
+            val text = "${tx.employeeName} | $typeStr | ${tx.amount} $currency | ${tx.date.toFormattedDateString()}"
             canvas.drawText(text, 50f, yPos, paint)
             yPos += 25f
         }

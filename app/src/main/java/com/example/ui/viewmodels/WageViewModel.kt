@@ -45,7 +45,7 @@ class WageViewModel(
     fun checkAttendanceForDate(dateMillis: Long) {
         viewModelScope.launch {
             try {
-                val calendar = java.util.Calendar.getInstance()
+                val calendar = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
                 calendar.timeInMillis = dateMillis
                 calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
                 calendar.set(java.util.Calendar.MINUTE, 0)

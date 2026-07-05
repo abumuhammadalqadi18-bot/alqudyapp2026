@@ -3,8 +3,7 @@ package com.example.ui.utils
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import java.text.SimpleDateFormat
-import java.util.Date
+import com.example.ui.utils.toFormattedDateString
 import java.util.Locale
 
 object SmsHelper {
@@ -18,8 +17,7 @@ object SmsHelper {
         currency: String,
         netPayable: Double
     ) {
-        val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.forLanguageTag("ar"))
-        val dateStr = dateFormatter.format(Date(dateMillis))
+        val dateStr = dateMillis.toFormattedDateString()
         val amountStr = String.format(Locale.US, "%,.2f", amount)
         val netPayableStr = String.format(Locale.US, "%,.2f", netPayable)
 
@@ -46,8 +44,7 @@ object SmsHelper {
         notes: String?,
         netPayable: Double
     ) {
-        val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.forLanguageTag("ar"))
-        val dateStr = dateFormatter.format(Date(dateMillis))
+        val dateStr = dateMillis.toFormattedDateString()
         val typeStr = if (isCash) "نقدي" else "آجل"
         val amountStr = String.format(Locale.US, "%,.2f", amount)
         val netPayableStr = String.format(Locale.US, "%,.2f", netPayable)
@@ -73,8 +70,7 @@ object SmsHelper {
         currency: String,
         netPayable: Double
     ) {
-        val dateFormatter = SimpleDateFormat("yyyy/MM/dd", Locale.forLanguageTag("ar"))
-        val dateStr = dateFormatter.format(Date(dateMillis))
+        val dateStr = dateMillis.toFormattedDateString()
         val netPayableStr = String.format(Locale.US, "%,.2f", netPayable)
 
         val msg = """
@@ -88,15 +84,19 @@ object SmsHelper {
         sendSms(context, phone, msg)
     }
 
-    private fun sendSms(context: Context, phone: String, message: String) {
-        val intent = Intent(Intent.ACTION_SENDTO).apply {
-            data = Uri.parse("smsto:$phone")
-            putExtra("sms_body", message)
-            putExtra(Intent.EXTRA_TEXT, message)
-            putExtra("body", message)
-            putExtra(Intent.EXTRA_SUBJECT, "إشعار من تطبيق القاضي")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    private fun sendSms(context: Context, phoneNumber: String, message: String) {
+        try {
+            val encodedMessage = Uri.encode(message)
+            val uri = Uri.parse("smsto:$phoneNumber?body=$encodedMessage")
+            
+            val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
+                putExtra("sms_body", message)
+                putExtra(Intent.EXTRA_TEXT, message)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        context.startActivity(intent)
     }
 }

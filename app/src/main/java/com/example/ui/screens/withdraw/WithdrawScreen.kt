@@ -43,8 +43,8 @@ import com.example.ui.viewmodels.ReportViewModel
 import com.example.ui.viewmodels.SettingsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.ui.utils.toArabicFormattedDateString
+import com.example.ui.utils.getUtcMidnight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,9 +69,8 @@ fun WithdrawScreen(
     val amount = amountText.toDoubleOrNull() ?: 0.0
 
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
-    val dateFormatter = remember { SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar")) }
-    val selectedDate = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = getUtcMidnight())
+    val selectedDate = datePickerState.selectedDateMillis ?: getUtcMidnight()
 
     var isCash by remember { mutableStateOf(true) }
     var notes by remember { mutableStateOf("") }
@@ -313,7 +312,7 @@ fun WithdrawScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = dateFormatter.format(Date(selectedDate)),
+                    value = selectedDate.toArabicFormattedDateString(),
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier

@@ -50,7 +50,7 @@ class HomeViewModel(
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             try {
                 // Get start and end of today
-                val calendar = Calendar.getInstance()
+                val calendar = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
                 calendar.set(Calendar.MINUTE, 0)
                 calendar.set(Calendar.SECOND, 0)
@@ -64,7 +64,7 @@ class HomeViewModel(
                 val endOfDay = calendar.timeInMillis
 
                 // Get start and end of the current month
-                val monthCalendar = Calendar.getInstance()
+                val monthCalendar = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
                 monthCalendar.set(Calendar.DAY_OF_MONTH, 1)
                 monthCalendar.set(Calendar.HOUR_OF_DAY, 0)
                 monthCalendar.set(Calendar.MINUTE, 0)

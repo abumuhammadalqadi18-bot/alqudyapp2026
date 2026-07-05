@@ -67,9 +67,8 @@ import com.example.ui.theme.DangerRed
 import com.example.ui.theme.LocalCurrencySymbol
 import com.example.ui.theme.RoyalNavy
 import com.example.ui.viewmodels.EmployeeViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.ui.utils.toFormattedDateString
+import com.example.ui.utils.getUtcMidnight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,7 +89,7 @@ fun AddEditEmployeeScreen(
     var dailyWage by rememberSaveable(employeeId) { mutableStateOf("") }
     var notes by rememberSaveable(employeeId) { mutableStateOf("") }
     var isActive by rememberSaveable(employeeId) { mutableStateOf(true) }
-    var hireDate by rememberSaveable(employeeId) { mutableStateOf(System.currentTimeMillis()) }
+    var hireDate by rememberSaveable(employeeId) { mutableStateOf(getUtcMidnight()) }
     
     var isInitialized by rememberSaveable(employeeId) { mutableStateOf(false) }
 
@@ -114,7 +113,6 @@ fun AddEditEmployeeScreen(
         datePickerState.selectedDateMillis?.let { hireDate = it }
     }
     
-    val dateFormatter = remember { SimpleDateFormat("yyyy/MM/dd", Locale("ar")) }
     val isEditing = employeeId != null
     val currency = LocalCurrencySymbol.current
 
@@ -365,7 +363,7 @@ fun AddEditEmployeeScreen(
             
             item {
                 OutlinedTextField(
-                    value = dateFormatter.format(Date(hireDate)),
+                    value = hireDate.toFormattedDateString(),
                     onValueChange = { },
                     label = { Text("تاريخ التوظيف") },
                     readOnly = true,

@@ -43,8 +43,8 @@ import com.example.ui.viewmodels.SettingsViewModel
 import com.example.ui.utils.SmsHelper
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import com.example.ui.utils.toArabicFormattedDateString
+import com.example.ui.utils.getUtcMidnight
 
 data class AttendanceSelection(
     val dayType: DayType = DayType.FULL_DAY,
@@ -65,9 +65,8 @@ fun AttendanceScreen(
     val scope = rememberCoroutineScope()
     
     var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
-    val dateFormatter = remember { SimpleDateFormat("EEEE، d MMMM yyyy", Locale("ar")) }
-    val selectedDate = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = getUtcMidnight())
+    val selectedDate = datePickerState.selectedDateMillis ?: getUtcMidnight()
 
     var searchQuery by remember { mutableStateOf("") }
     val currency = LocalCurrencySymbol.current
@@ -308,7 +307,7 @@ fun AttendanceScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = dateFormatter.format(Date(selectedDate)),
+                                    text = selectedDate.toArabicFormattedDateString(),
                                     style = MaterialTheme.typography.titleLarge,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold

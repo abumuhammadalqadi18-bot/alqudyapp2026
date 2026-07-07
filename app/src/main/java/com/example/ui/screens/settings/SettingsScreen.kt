@@ -1,6 +1,10 @@
 package com.example.ui.screens.settings
 
+import android.app.Activity
+import android.content.Intent
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,22 +33,68 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.ui.theme.RoyalNavy
 import com.example.ui.viewmodels.SettingsViewModel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(settingsViewModel: SettingsViewModel) {
     val uiState by settingsViewModel.uiState.collectAsState()
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     var showPinDialog by remember { mutableStateOf(false) }
     var tempPin by remember { mutableStateOf("") }
 
-    var isLocalBackupLoading by remember { mutableStateOf(false) }
-    var isCloudBackupLoading by remember { mutableStateOf(false) }
-    var isRestoreLoading by remember { mutableStateOf(false) }
+    LaunchedEffect(uiState.actionMessage) {
+        uiState.actionMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            settingsViewModel.clearActionMessage()
+        }
+    }
+
+    val localBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        uri?.let {
+            settingsViewModel.backupToLocal(context, it)
+        }
+    }
+
+    val localRestoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            settingsViewModel.restoreFromLocal(context, it)
+        }
+    }
+
+    val googleSignInBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            settingsViewModel.backupToCloud(context)
+        } else {
+            Toast.makeText(context, "تم إلغاء عملية الربط بحساب Google", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    val googleSignInRestoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            settingsViewModel.restoreFromCloud(context)
+        } else {
+            Toast.makeText(context, "تم إلغاء عملية الربط بحساب Google", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun launchGoogleAccountChooser(launcher: androidx.activity.compose.ManagedActivityResultLauncher<Intent, androidx.activity.result.ActivityResult>) {
+        val intent = android.accounts.AccountManager.newChooseAccountIntent(
+            null, null, arrayOf("com.google"), null, null, null, null
+        )
+        launcher.launch(intent)
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -249,50 +300,47 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                 SettingsSectionTitle("النسخ الاحتياطي والاستعادة")
                 SettingsCard {
                     BackupActionRow(
-                        title = "نسخ احتياطي محلي",
-                        subtitle = "حفظ البيانات في ذاكرة الهاتف",
+                        title = "نسخ احتياطي محلي للهاتف",
+                        subtitle = "حفظ البيانات كملف (.db) في ذاكرة الهاتف",
                         icon = Icons.Default.Save,
                         iconColor = RoyalNavy,
-                        isLoading = isLocalBackupLoading,
+                        isLoading = uiState.isLocalSaving,
                         onClick = {
-                            coroutineScope.launch {
-                                isLocalBackupLoading = true
-                                delay(1500) // Simulate process
-                                isLocalBackupLoading = false
-                                Toast.makeText(context, "تم أخذ نسخة احتياطية محلية بنجاح", Toast.LENGTH_SHORT).show()
-                            }
+                            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(Date())
+                            localBackupLauncher.launch("AlQadhi_Backup_$timeStamp.db")
+                        }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    BackupActionRow(
+                        title = "استيراد البيانات من الهاتف",
+                        subtitle = "استعادة البيانات من ملف محلي سابق",
+                        icon = Icons.Default.SettingsBackupRestore,
+                        iconColor = Color(0xFFE67E22),
+                        isLoading = uiState.isLocalRestoring,
+                        onClick = {
+                            localRestoreLauncher.launch(arrayOf("*/*"))
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                     BackupActionRow(
                         title = "ربط ونسخ عبر Google Drive",
-                        subtitle = "حفظ البيانات سحابياً لضمان عدم فقدانها",
+                        subtitle = "حفظ البيانات سحابياً عبر حساب Google",
                         icon = Icons.Default.CloudUpload,
-                        iconColor = Color(0xFFC0473C),
-                        isLoading = isCloudBackupLoading,
+                        iconColor = Color(0xFF2E7D5B),
+                        isLoading = uiState.isCloudSaving,
                         onClick = {
-                            coroutineScope.launch {
-                                isCloudBackupLoading = true
-                                delay(2000) // Simulate process
-                                isCloudBackupLoading = false
-                                Toast.makeText(context, "تم المزامنة مع Google Drive بنجاح", Toast.LENGTH_SHORT).show()
-                            }
+                            launchGoogleAccountChooser(googleSignInBackupLauncher)
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                     BackupActionRow(
-                        title = "استيراد البيانات",
-                        subtitle = "استعادة البيانات من نسخة سابقة",
+                        title = "استيراد البيانات من السحابة",
+                        subtitle = "استعادة النسخة السحابية من Google Drive",
                         icon = Icons.Default.CloudDownload,
-                        iconColor = Color(0xFF2E7D5B),
-                        isLoading = isRestoreLoading,
+                        iconColor = Color(0xFFC0473C),
+                        isLoading = uiState.isCloudRestoring,
                         onClick = {
-                            coroutineScope.launch {
-                                isRestoreLoading = true
-                                delay(1500) // Simulate process
-                                isRestoreLoading = false
-                                Toast.makeText(context, "تم استعادة البيانات بنجاح", Toast.LENGTH_SHORT).show()
-                            }
+                            launchGoogleAccountChooser(googleSignInRestoreLauncher)
                         }
                     )
                 }

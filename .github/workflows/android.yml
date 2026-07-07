@@ -9,11 +9,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    # تحديد المجلد الفرعي الافتراضي لكل الخطوات البرمجية التالية
+
+    # 1. اضف هذا السطر هنا وحدد اسم المجلد الفرعي الفعلي للمشروع بدلاً من "app"
     defaults:
       run:
-        working-directory: ./app # استبدل app باسم مجلد مشروعك الفعلي إذا كان مختلفاً
+        working-directory: ./app 
 
     steps:
     - uses: actions/checkout@v4
@@ -41,5 +41,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
-        # نعود للمجلد الرئيسي أولاً لرفع الـ APK بشكل صحيح إذا لزم الأمر
-        path: app/app/build/outputs/apk/debug/app-debug.apk 
+        # 2. تأكد من تعديل المسار هنا ليعود للمجلد الرئيسي ثم يبحث عن الـ APK
+        path: app/build/outputs/apk/debug/app-debug.apk

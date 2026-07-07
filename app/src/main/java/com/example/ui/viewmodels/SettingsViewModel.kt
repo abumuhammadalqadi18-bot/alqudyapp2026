@@ -10,29 +10,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * UI State for Settings.
- * حالة واجهة المستخدم لإعدادات التطبيق.
- */
 data class SettingsUiState(
-    val isAppLockEnabled: Boolean = false,
-    val lockType: String = "BIOMETRIC", // BIOMETRIC or PIN
-    val isAutoBackupEnabled: Boolean = false,
+    val themeMode: String = "SYSTEM", // SYSTEM, LIGHT, DARK
+    val isDarkMode: Boolean = false, // backward compatibility
+    val currencySymbol: String = "ريال يمني",
     val isAutoSmsEnabled: Boolean = false,
-    val currencySymbol: String = "ر.س",
-    val isDarkMode: Boolean = false,
+    val isPinLockEnabled: Boolean = false,
+    val pinCode: String = "",
+    val isBiometricEnabled: Boolean = false,
+    val isAppLockEnabled: Boolean = false, // backward compatibility
+    val lockType: String = "BIOMETRIC", // backward compatibility
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
 
-/**
- * ViewModel for managing app settings and triggering backups.
- * مدير حالة واجهة المستخدم لضبط إعدادات التطبيق وإدارة النسخ الاحتياطي.
- */
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val backupRepository: BackupRepository
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -44,18 +40,14 @@ class SettingsViewModel(
         _uiState.update { it.copy(isLoading = true) }
         
         viewModelScope.launch {
-            settingsRepository.getBooleanSettingFlow("app_lock_enabled", false).collect { value ->
-                _uiState.update { it.copy(isAppLockEnabled = value) }
+            settingsRepository.getSettingFlow("theme_mode", "SYSTEM").collect { value ->
+                val isDark = value == "DARK"
+                _uiState.update { it.copy(themeMode = value, isDarkMode = isDark) }
             }
         }
         viewModelScope.launch {
-            settingsRepository.getSettingFlow("app_lock_type", "BIOMETRIC").collect { value ->
-                _uiState.update { it.copy(lockType = value) }
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.getBooleanSettingFlow("auto_backup_enabled", false).collect { value ->
-                _uiState.update { it.copy(isAutoBackupEnabled = value) }
+            settingsRepository.getSettingFlow("currency_symbol", "ريال يمني").collect { value ->
+                _uiState.update { it.copy(currencySymbol = value) }
             }
         }
         viewModelScope.launch {
@@ -64,40 +56,39 @@ class SettingsViewModel(
             }
         }
         viewModelScope.launch {
-            settingsRepository.getSettingFlow("currency_symbol", "ر.س").collect { value ->
-                _uiState.update { it.copy(currencySymbol = value) }
+            settingsRepository.getBooleanSettingFlow("pin_lock_enabled", false).collect { value ->
+                _uiState.update { 
+                    it.copy(
+                        isPinLockEnabled = value,
+                        isAppLockEnabled = value || it.isBiometricEnabled,
+                        lockType = if (value) "PIN" else if (it.isBiometricEnabled) "BIOMETRIC" else "BIOMETRIC"
+                    ) 
+                }
             }
         }
         viewModelScope.launch {
-            settingsRepository.getBooleanSettingFlow("dark_mode", false).collect { value ->
-                _uiState.update { it.copy(isDarkMode = value) }
+            settingsRepository.getSettingFlow("pin_code", "").collect { value ->
+                _uiState.update { it.copy(pinCode = value) }
             }
         }
-        
+        viewModelScope.launch {
+            settingsRepository.getBooleanSettingFlow("biometric_enabled", false).collect { value ->
+                _uiState.update { 
+                    it.copy(
+                        isBiometricEnabled = value,
+                        isAppLockEnabled = value || it.isPinLockEnabled,
+                        lockType = if (value) "BIOMETRIC" else if (it.isPinLockEnabled) "PIN" else "BIOMETRIC"
+                    ) 
+                }
+            }
+        }
+
         _uiState.update { it.copy(isLoading = false) }
     }
 
-    fun setAppLockEnabled(enabled: Boolean) {
+    fun setThemeMode(mode: String) {
         viewModelScope.launch {
-            settingsRepository.saveBooleanSetting("app_lock_enabled", enabled)
-        }
-    }
-
-    fun setLockType(type: String) {
-        viewModelScope.launch {
-            settingsRepository.saveSetting("app_lock_type", type)
-        }
-    }
-
-    fun setAutoBackupEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.saveBooleanSetting("auto_backup_enabled", enabled)
-        }
-    }
-
-    fun setAutoSmsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.saveBooleanSetting("auto_sms_enabled", enabled)
+            settingsRepository.saveSetting("theme_mode", mode)
         }
     }
 
@@ -107,15 +98,34 @@ class SettingsViewModel(
         }
     }
 
-    fun setDarkMode(enabled: Boolean) {
+    fun setAutoSmsEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.saveBooleanSetting("dark_mode", enabled)
+            settingsRepository.saveBooleanSetting("auto_sms_enabled", enabled)
         }
     }
 
-    fun triggerManualBackup() {
-        // Here we would typically trigger the WorkManager or call Drive API
-        // This is a placeholder for the UI trigger
+    fun setPinLockEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveBooleanSetting("pin_lock_enabled", enabled)
+            if (enabled) {
+                settingsRepository.saveBooleanSetting("biometric_enabled", false)
+            }
+        }
+    }
+
+    fun setPinCode(code: String) {
+        viewModelScope.launch {
+            settingsRepository.saveSetting("pin_code", code)
+        }
+    }
+
+    fun setBiometricEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.saveBooleanSetting("biometric_enabled", enabled)
+            if (enabled) {
+                settingsRepository.saveBooleanSetting("pin_lock_enabled", false)
+            }
+        }
     }
 
     fun clearError() {

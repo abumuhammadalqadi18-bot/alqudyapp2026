@@ -92,7 +92,7 @@ object ExcelHelper {
     }
 
     private fun Long.toUtcDateString(): String {
-        val format = SimpleDateFormat("yyyy-MM-dd", Locale("en")).apply {
+        val format = SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
         return format.format(Date(this))

@@ -8,14 +8,14 @@ import java.util.Calendar
 
 fun Long.toFormattedDateString(pattern: String = "yyyy-MM-dd"): String {
     val date = Date(this)
-    val format = SimpleDateFormat(pattern, Locale("en"))
+    val format = SimpleDateFormat(pattern, Locale.ENGLISH)
     format.timeZone = TimeZone.getTimeZone("UTC")
     return format.format(date)
 }
 
 fun Long.toArabicFormattedDateString(pattern: String = "EEEE، d MMMM yyyy"): String {
     val date = Date(this)
-    val format = SimpleDateFormat(pattern, Locale("ar"))
+    val format = SimpleDateFormat(pattern, Locale.forLanguageTag("ar"))
     format.timeZone = TimeZone.getTimeZone("UTC")
     return format.format(date)
 }

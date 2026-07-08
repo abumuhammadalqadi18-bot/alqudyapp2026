@@ -208,7 +208,7 @@ fun WithdrawScreen(
                         readOnly = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(),
+                            .menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryNotEditable),
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showEmployeeDropdown) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = AccentGold,

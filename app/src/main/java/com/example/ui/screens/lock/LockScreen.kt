@@ -176,6 +176,7 @@ fun LockScreen(
                             },
                             modifier = Modifier.size(72.dp)
                         ) {
+                            @Suppress("DEPRECATION")
                             Icon(
                                 imageVector = Icons.Default.Backspace,
                                 contentDescription = "مسح",

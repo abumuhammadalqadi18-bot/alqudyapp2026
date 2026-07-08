@@ -59,7 +59,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "alqadi_database.db"
-                ).fallbackToDestructiveMigration()
+                ).fallbackToDestructiveMigration(dropAllTables = true)
 
                 if (!isRobolectric) {
                     builder.openHelperFactory(SupportFactory(passphrase))

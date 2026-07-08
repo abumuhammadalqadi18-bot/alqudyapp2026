@@ -9,6 +9,7 @@ import com.example.di.AppContainer
  * مزود مصنع لإنشاء الـ ViewModels وحقن الاعتماديات من الـ AppContainer.
  */
 class AppViewModelProvider(private val appContainer: AppContainer) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return when {
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {

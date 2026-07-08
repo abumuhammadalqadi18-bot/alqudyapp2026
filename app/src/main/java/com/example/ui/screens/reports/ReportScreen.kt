@@ -150,7 +150,7 @@ fun EmployeeStatementTab(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("حدد العامل المطلوب *") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryNotEditable),
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -591,7 +591,7 @@ fun shareGeneralViaWhatsApp(context: Context, filter: String, summary: GeneralRe
 }
 
 fun Long.toUtcDateString(): String {
-    val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale("en")).apply {
+    val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ENGLISH).apply {
         timeZone = java.util.TimeZone.getTimeZone("UTC")
     }
     return format.format(java.util.Date(this))

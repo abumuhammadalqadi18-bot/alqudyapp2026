@@ -21,18 +21,18 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 👇 هذه الخطوة تم تعديلها لتوليد الـ Wrapper تلقائياً داخل سير العمل
+    # 👇 تم إصلاح خيار add-job-summary لمنع التحذير في النهاية
     - name: Setup Gradle & Generate Wrapper
       uses: gradle/actions/setup-gradle@v4
       with:
         validate-wrappers: false
         cache-disabled: true
-        add-job-summary: true
+        add-job-summary: 'always'
     
-    # 👇 أمر إضافي يقوم بإنشاء ملفات الـ Wrapper ميكانيكياً في حال عدم وجودها
+    # 👇 تم تحديث الإصدار هنا إلى 9.3.1 ليتوافق تماماً مع مشروعك
     - name: Force Generate Missing Wrapper
       run: |
-        gradle wrapper --gradle-version 8.5
+        gradle wrapper --gradle-version 9.3.1
         chmod +x gradlew
 
     - name: Prepare Keystore

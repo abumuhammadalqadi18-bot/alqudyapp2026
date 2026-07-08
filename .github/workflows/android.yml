@@ -21,14 +21,19 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Gradle
+    # 👇 هذه الخطوة تم تعديلها لتوليد الـ Wrapper تلقائياً داخل سير العمل
+    - name: Setup Gradle & Generate Wrapper
       uses: gradle/actions/setup-gradle@v4
       with:
         validate-wrappers: false
         cache-disabled: true
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+        add-job-summary: true
+    
+    # 👇 أمر إضافي يقوم بإنشاء ملفات الـ Wrapper ميكانيكياً في حال عدم وجودها
+    - name: Force Generate Missing Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.5
+        chmod +x gradlew
 
     - name: Prepare Keystore
       run: |

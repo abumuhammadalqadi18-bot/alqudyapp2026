@@ -26,9 +26,8 @@ jobs:
       with:
         validate-wrappers: false
         cache-disabled: true
+        gradle-version: '8.6'
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
 
     - name: Prepare Keystore
       run: |
@@ -41,12 +40,12 @@ jobs:
     - name: Run Unit Tests
       env:
         GRADLE_OPTS: "-Djava.awt.headless=true -Dorg.gradle.daemon=false"
-      run: ./gradlew testDebugUnitTest
+      run: gradle testDebugUnitTest
 
     - name: Build Debug APK
       env:
         GRADLE_OPTS: "-Djava.awt.headless=true -Dorg.gradle.daemon=false"
-      run: ./gradlew assembleDebug
+      run: gradle assembleDebug
       
     - name: Upload Artifact
       uses: actions/upload-artifact@v4

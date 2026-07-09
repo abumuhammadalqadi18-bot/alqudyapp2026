@@ -69,32 +69,23 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
         }
     }
 
-    val googleSignInBackupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            settingsViewModel.backupToCloud(context)
-        } else {
-            Toast.makeText(context, "تم إلغاء عملية الربط بحساب Google", Toast.LENGTH_SHORT).show()
+    val cloudBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        uri?.let {
+            settingsViewModel.backupToCloud(context, it)
         }
     }
 
-    val googleSignInRestoreLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            settingsViewModel.restoreFromCloud(context)
-        } else {
-            Toast.makeText(context, "تم إلغاء عملية الربط بحساب Google", Toast.LENGTH_SHORT).show()
+    val cloudRestoreLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let {
+            settingsViewModel.restoreFromCloud(context, it)
         }
     }
 
-    fun launchGoogleAccountChooser(launcher: androidx.activity.compose.ManagedActivityResultLauncher<Intent, androidx.activity.result.ActivityResult>) {
-        val intent = android.accounts.AccountManager.newChooseAccountIntent(
-            null, null, arrayOf("com.google"), null, null, null, null
-        )
-        launcher.launch(intent)
-    }
+
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -329,7 +320,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                         iconColor = Color(0xFF2E7D5B),
                         isLoading = uiState.isCloudSaving,
                         onClick = {
-                            launchGoogleAccountChooser(googleSignInBackupLauncher)
+                            cloudBackupLauncher.launch("AlQadhi_Cloud_Backup.db")
                         }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
@@ -340,7 +331,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                         iconColor = Color(0xFFC0473C),
                         isLoading = uiState.isCloudRestoring,
                         onClick = {
-                            launchGoogleAccountChooser(googleSignInRestoreLauncher)
+                            cloudRestoreLauncher.launch(arrayOf("*/*"))
                         }
                     )
                 }

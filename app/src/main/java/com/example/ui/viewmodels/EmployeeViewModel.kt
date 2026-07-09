@@ -105,9 +105,22 @@ class EmployeeViewModel(
         viewModelScope.launch {
             try {
                 employeeRepository.archiveEmployee(id)
-            } catch (e: Exception) {
-                 _uiState.value = _uiState.value.copy(
+            } catch (e: Exception) { 
+                _uiState.value = _uiState.value.copy(
                     errorMessage = "فشل في أرشفة الموظف: ${e.message}"
+                )
+            }
+        }
+    }
+
+    fun deleteEmployee(employee: EmployeeEntity, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                employeeRepository.deleteEmployee(employee)
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "فشل في حذف الموظف: ${e.message}"
                 )
             }
         }

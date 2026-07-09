@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository class for managing employee data.
- * مستودع إدارة بيانات الموظفين (إضافة، تحديث، أرشفة، وجلب البيانات).
+ * مستودع إدارة بيانات الموظفين (إضافة، تحديث، أرشفة، حذف، وجلب البيانات).
  */
 class EmployeeRepository(private val employeeDao: EmployeeDao) {
 
@@ -31,5 +31,9 @@ class EmployeeRepository(private val employeeDao: EmployeeDao) {
 
     suspend fun archiveEmployee(id: Long) {
         employeeDao.archiveEmployee(id)
+    }
+
+    suspend fun deleteEmployee(employee: EmployeeEntity) {
+        employeeDao.delete(employee)
     }
 }

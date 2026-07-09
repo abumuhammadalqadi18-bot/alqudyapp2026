@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +25,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.DateRange
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -59,6 +62,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.data.local.entity.EmployeeEntity
 import com.example.domain.model.EmployeeStatus
@@ -90,6 +94,7 @@ fun AddEditEmployeeScreen(
     var notes by rememberSaveable(employeeId) { mutableStateOf("") }
     var isActive by rememberSaveable(employeeId) { mutableStateOf(true) }
     var hireDate by rememberSaveable(employeeId) { mutableStateOf(getUtcMidnight()) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     
     var isInitialized by rememberSaveable(employeeId) { mutableStateOf(false) }
 
@@ -115,8 +120,8 @@ fun AddEditEmployeeScreen(
     
     val isEditing = employeeId != null
     val currency = LocalCurrencySymbol.current
-
     val context = LocalContext.current
+
     val contactPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickContact()
     ) { uri ->
@@ -181,6 +186,17 @@ fun AddEditEmployeeScreen(
                             contentDescription = "رجوع",
                             tint = MaterialTheme.colorScheme.onBackground
                         )
+                    }
+                },
+                actions = {
+                    if (isEditing) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "حذف الموظف",
+                                tint = Color(0xFFC0473C)
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -452,6 +468,46 @@ fun AddEditEmployeeScreen(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+
+        if (showDeleteDialog && employee != null) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = {
+                    Text(
+                        text = "تنبيه حرج",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = DangerRed,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = "هل أنت متأكد من حذف هذا الموظف نهائياً؟ سيؤدي هذا إلى حذف جميع سجلات حضوره وسحوباته المالية المرتبطة به فوراً ولا يمكن التراجع عن هذا الإجراء.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            employeeViewModel.deleteEmployee(employee) {
+                                onNavigateBack()
+                            }
+                            showDeleteDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
+                    ) {
+                        Text("حذف نهائي", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("إلغاء", color = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            )
         }
     }
 }

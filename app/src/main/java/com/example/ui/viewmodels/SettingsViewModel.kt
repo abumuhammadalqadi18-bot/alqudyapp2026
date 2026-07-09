@@ -58,16 +58,19 @@ class SettingsViewModel(
                 _uiState.update { it.copy(themeMode = value, isDarkMode = isDark) }
             }
         }
+
         viewModelScope.launch {
             settingsRepository.getSettingFlow("currency_symbol", "ريال يمني").collect { value ->
                 _uiState.update { it.copy(currencySymbol = value) }
             }
         }
+
         viewModelScope.launch {
             settingsRepository.getBooleanSettingFlow("auto_sms_enabled", false).collect { value ->
                 _uiState.update { it.copy(isAutoSmsEnabled = value) }
             }
         }
+
         viewModelScope.launch {
             settingsRepository.getBooleanSettingFlow("pin_lock_enabled", false).collect { value ->
                 _uiState.update { 
@@ -79,11 +82,13 @@ class SettingsViewModel(
                 }
             }
         }
+
         viewModelScope.launch {
             settingsRepository.getSettingFlow("pin_code", "").collect { value ->
                 _uiState.update { it.copy(pinCode = value) }
             }
         }
+
         viewModelScope.launch {
             settingsRepository.getBooleanSettingFlow("biometric_enabled", false).collect { value ->
                 _uiState.update { 
@@ -183,28 +188,44 @@ class SettingsViewModel(
         }
     }
 
-    fun backupToCloud(context: Context) {
+    fun backupToCloud(context: Context, uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isCloudSaving = true) }
             try {
-                // محاكاة الاتصال الفعلي السحابي عبر Google Drive API
-                delay(3000)
+                withContext(Dispatchers.IO) {
+                    val dbFile = context.getDatabasePath("alqadi_database.db")
+                    if (dbFile.exists()) {
+                        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                            FileInputStream(dbFile).use { inputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
+                        }
+                    } else {
+                        throw Exception("ملف قاعدة البيانات غير موجود.")
+                    }
+                }
                 _uiState.update { it.copy(isCloudSaving = false, actionMessage = "تم رفع النسخة الاحتياطية إلى Google Drive بنجاح.") }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isCloudSaving = false, actionMessage = "فشل النسخ السحابي.") }
+                _uiState.update { it.copy(isCloudSaving = false, actionMessage = "فشل النسخ السحابي: ${e.message}") }
             }
         }
     }
 
-    fun restoreFromCloud(context: Context) {
+    fun restoreFromCloud(context: Context, uri: Uri) {
         viewModelScope.launch {
             _uiState.update { it.copy(isCloudRestoring = true) }
             try {
-                // محاكاة استيراد البيانات من Google Drive API
-                delay(3000)
-                _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "تم استعادة النسخة السحابية بنجاح.") }
+                withContext(Dispatchers.IO) {
+                    val dbFile = context.getDatabasePath("alqadi_database.db")
+                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        FileOutputStream(dbFile).use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                }
+                _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "تم استعادة النسخة السحابية بنجاح، يرجى إعادة تشغيل التطبيق.") }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "فشل الاستعادة السحابية.") }
+                _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "فشل الاستعادة السحابية: ${e.message}") }
             }
         }
     }

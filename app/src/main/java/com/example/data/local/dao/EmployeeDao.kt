@@ -1,6 +1,7 @@
 package com.example.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface EmployeeDao {
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(employee: EmployeeEntity): Long
 
@@ -20,6 +22,9 @@ interface EmployeeDao {
 
     @Query("UPDATE employees SET status = 'INACTIVE' WHERE id = :id")
     suspend fun archiveEmployee(id: Long)
+
+    @Delete
+    suspend fun delete(employee: EmployeeEntity)
 
     @Query("SELECT * FROM employees WHERE id = :id")
     suspend fun getById(id: Long): EmployeeEntity?

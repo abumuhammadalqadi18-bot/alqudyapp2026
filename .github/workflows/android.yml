@@ -39,12 +39,12 @@ jobs:
 
     - name: Run Unit Tests
       env:
-        GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false -Djava.awt.headless=true"
       run: gradle testDebugUnitTest
 
     - name: Build Debug APK
       env:
-        GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false -Djava.awt.headless=true"
       run: gradle assembleDebug
       
     - name: Upload Artifact

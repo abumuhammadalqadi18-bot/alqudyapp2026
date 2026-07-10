@@ -1,5 +1,7 @@
 package com.example.ui.screens.home
 
+import com.example.util.toCurrencyFormat
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -186,7 +188,7 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = String.format("%,.2f", uiState.totalPaymentsThisMonth),
+                            text = uiState.totalPaymentsThisMonth.toCurrencyFormat(),
                             style = MaterialTheme.typography.displayMedium,
                             color = Color.White,
                             fontWeight = FontWeight.Bold

@@ -25,6 +25,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import com.example.util.safeToDouble
+import com.example.util.toCurrencyFormat
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -66,7 +68,7 @@ fun WithdrawScreen(
     var showEmployeeDropdown by remember { mutableStateOf(false) }
 
     var amountText by remember { mutableStateOf("") }
-    val amount = amountText.toDoubleOrNull() ?: 0.0
+    val amount = amountText.safeToDouble()
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = getUtcMidnight())
@@ -244,9 +246,14 @@ fun WithdrawScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = amountText,
-                    onValueChange = { amountText = it },
+                    onValueChange = { newValue ->
+                        val filtered = newValue.replace(",", ".").replace("،", ".").replace("٫", ".")
+                        if (filtered.count { it == '.' } <= 1 && filtered.all { it.isDigit() || it == '.' }) {
+                            amountText = filtered
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     textStyle = MaterialTheme.typography.displaySmall.copy(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold,
@@ -294,7 +301,7 @@ fun WithdrawScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "الصافي الحالي: ${String.format("%,.2f", netPayable)} $currency",
+                                text = "الصافي الحالي: ${netPayable.toCurrencyFormat()} $currency",
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

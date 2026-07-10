@@ -61,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import com.example.util.safeToDouble
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -214,7 +215,7 @@ fun AddEditEmployeeScreen(
                 Button(
                     onClick = {
                         if (name.isNotBlank() && dailyWage.isNotBlank()) {
-                            val wageDouble = dailyWage.toDoubleOrNull() ?: 0.0
+                            val wageDouble = dailyWage.safeToDouble()
                             val newEmployee = EmployeeEntity(
                                 id = employeeId ?: 0,
                                 name = name,
@@ -363,10 +364,15 @@ fun AddEditEmployeeScreen(
             item {
                 OutlinedTextField(
                     value = dailyWage,
-                    onValueChange = { dailyWage = it },
+                    onValueChange = { newValue ->
+                        val filtered = newValue.replace(",", ".").replace("،", ".").replace("٫", ".")
+                        if (filtered.count { it == '.' } <= 1 && filtered.all { it.isDigit() || it == '.' }) {
+                            dailyWage = filtered
+                        }
+                    },
                     label = { Text("الأجر اليومي الأساسي *") },
                     suffix = { Text(currency) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(

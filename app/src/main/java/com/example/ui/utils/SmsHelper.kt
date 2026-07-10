@@ -1,5 +1,7 @@
 package com.example.ui.utils
 
+import com.example.util.toCurrencyFormat
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -18,8 +20,8 @@ object SmsHelper {
         netPayable: Double
     ) {
         val dateStr = dateMillis.toFormattedDateString()
-        val amountStr = String.format(Locale.US, "%,.2f", amount)
-        val netPayableStr = String.format(Locale.US, "%,.2f", netPayable)
+        val amountStr = amount.toCurrencyFormat()
+        val netPayableStr = netPayable.toCurrencyFormat()
 
         val msg = """
             أخي العزيز/ $employeeName المحترم،
@@ -46,8 +48,8 @@ object SmsHelper {
     ) {
         val dateStr = dateMillis.toFormattedDateString()
         val typeStr = if (isCash) "نقدي" else "آجل"
-        val amountStr = String.format(Locale.US, "%,.2f", amount)
-        val netPayableStr = String.format(Locale.US, "%,.2f", netPayable)
+        val amountStr = amount.toCurrencyFormat()
+        val netPayableStr = netPayable.toCurrencyFormat()
         val notesStr = if (!notes.isNullOrBlank()) "\nالملاحظات: $notes." else ""
 
         val msg = """
@@ -71,7 +73,7 @@ object SmsHelper {
         netPayable: Double
     ) {
         val dateStr = dateMillis.toFormattedDateString()
-        val netPayableStr = String.format(Locale.US, "%,.2f", netPayable)
+        val netPayableStr = netPayable.toCurrencyFormat()
 
         val msg = """
             تنويه رسمي من إدارة الأجور:

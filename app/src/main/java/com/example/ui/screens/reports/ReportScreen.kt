@@ -1,5 +1,7 @@
 package com.example.ui.screens.reports
 
+import com.example.util.toCurrencyFormat
+
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -194,7 +196,7 @@ fun EmployeeStatementTab(
                                 horizontalArrangement = Arrangement.SpaceEvenly
                             ) {
                                 InfoItem("المهنة", empDetail.jobTitle.ifEmpty { "غير محدد" })
-                                InfoItem("معدل الأجرة", "${String.format("%,.2f", empDetail.dailyWage)} $currency")
+                                InfoItem("معدل الأجرة", "${empDetail.dailyWage.toCurrencyFormat()} $currency")
                                 InfoItem("تاريخ الالتحاق", empDetail.hireDate.toUtcDateString())
                             }
                         }
@@ -221,19 +223,19 @@ fun EmployeeStatementTab(
                         ) {
                             StatCard(
                                 title = "أجور مستحقة",
-                                amount = "${String.format("%,.2f", state.employeeSummary.totalEarned)}",
+                                amount = "${state.employeeSummary.totalEarned.toCurrencyFormat()}",
                                 color = RoyalNavy,
                                 modifier = Modifier.weight(1f)
                             )
                             StatCard(
                                 title = "سلفيات مقتطعة",
-                                amount = "${String.format("%,.2f", state.employeeSummary.totalWithdrawn)}",
+                                amount = "${state.employeeSummary.totalWithdrawn.toCurrencyFormat()}",
                                 color = Color(0xFFC0473C),
                                 modifier = Modifier.weight(1f)
                             )
                             StatCard(
                                 title = "الرصيد المتبقي",
-                                amount = "${String.format("%,.2f", state.employeeSummary.netPayable)}",
+                                amount = "${state.employeeSummary.netPayable.toCurrencyFormat()}",
                                 color = Color(0xFF2E7D5B),
                                 modifier = Modifier.weight(1f)
                             )
@@ -358,12 +360,12 @@ fun GeneralReportsTab(
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("رواتب محتسبة ومستحقة الصرف:", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${String.format("%,.2f", state.generalSummary.totalEarned)} $currency", fontWeight = FontWeight.Bold, color = RoyalNavy)
+                        Text("${state.generalSummary.totalEarned.toCurrencyFormat()} $currency", fontWeight = FontWeight.Bold, color = RoyalNavy)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("إجمالي السلف والمقتطعات:", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${String.format("%,.2f", state.generalSummary.totalWithdrawn)} $currency", fontWeight = FontWeight.Bold, color = Color(0xFFC0473C))
+                        Text("${state.generalSummary.totalWithdrawn.toCurrencyFormat()} $currency", fontWeight = FontWeight.Bold, color = Color(0xFFC0473C))
                     }
                 }
             }
@@ -381,7 +383,7 @@ fun GeneralReportsTab(
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("صافي التكلفة التشغيلية:", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${String.format("%,.2f", state.generalSummary.netCost)} $currency", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D5B))
+                        Text("${state.generalSummary.netCost.toCurrencyFormat()} $currency", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D5B))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -490,7 +492,7 @@ fun TransactionRow(tx: TransactionItem, currency: String) {
                 )
             }
             Text(
-                text = "$amountPrefix${String.format("%,.2f", tx.amount)} $currency",
+                text = "$amountPrefix${tx.amount.toCurrencyFormat()} $currency",
                 style = MaterialTheme.typography.titleMedium,
                 color = amountColor,
                 fontWeight = FontWeight.Bold
@@ -533,7 +535,7 @@ fun GeneralRecordCard(record: GeneralEmployeeRecord, currency: String) {
                 )
             }
             Text(
-                text = "${String.format("%,.2f", record.totalAmount)} $currency",
+                text = "${record.totalAmount.toCurrencyFormat()} $currency",
                 style = MaterialTheme.typography.titleMedium,
                 color = RoyalNavy,
                 fontWeight = FontWeight.Bold
@@ -546,9 +548,9 @@ fun shareEmployeeViaWhatsApp(context: Context, employeeName: String, summary: Em
     val text = buildString {
         append("القاضي لإدارة الأجور 🏛️\nالسلام عليكم ورحمة الله وبركاته،\n")
         append("عزيزي الموظف: $employeeName\nتم إصدار كشف حساب مالي للفترة المحددة:\n")
-        append("إجمالي المستحقات: ${String.format("%,.2f", summary.totalEarned)} $currency\n")
-        append("إجمالي السلفيات: ${String.format("%,.2f", summary.totalWithdrawn)} $currency\n")
-        append("الصافي الحالي: ${String.format("%,.2f", summary.netPayable)} $currency")
+        append("إجمالي المستحقات: ${summary.totalEarned.toCurrencyFormat()} $currency\n")
+        append("إجمالي السلفيات: ${summary.totalWithdrawn.toCurrencyFormat()} $currency\n")
+        append("الصافي الحالي: ${summary.netPayable.toCurrencyFormat()} $currency")
     }
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
@@ -569,9 +571,9 @@ fun shareEmployeeViaWhatsApp(context: Context, employeeName: String, summary: Em
 fun shareGeneralViaWhatsApp(context: Context, filter: String, summary: GeneralReportSummary, currency: String) {
     val text = buildString {
         append("القاضي لإدارة الأجور 🏛️\nملخص التقرير الدوري العام:\nالفترة: $filter\n")
-        append("إجمالي التكلفة التشغيلية: ${String.format("%,.2f", summary.netCost)} $currency\n")
-        append("إجمالي الرواتب المحتسبة: ${String.format("%,.2f", summary.totalEarned)} $currency\n")
-        append("إجمالي السلفيات والمقتطعات: ${String.format("%,.2f", summary.totalWithdrawn)} $currency\n")
+        append("إجمالي التكلفة التشغيلية: ${summary.netCost.toCurrencyFormat()} $currency\n")
+        append("إجمالي الرواتب المحتسبة: ${summary.totalEarned.toCurrencyFormat()} $currency\n")
+        append("إجمالي السلفيات والمقتطعات: ${summary.totalWithdrawn.toCurrencyFormat()} $currency\n")
         append("تعداد العمال المشاركين: ${summary.participatingEmployeesCount} عامل")
     }
     val intent = Intent(Intent.ACTION_SEND).apply {

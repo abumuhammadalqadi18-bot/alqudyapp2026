@@ -1,5 +1,7 @@
 package com.example.ui.screens.attendance
 
+import com.example.util.toCurrencyFormat
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -174,7 +176,7 @@ fun AttendanceScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${String.format("%,.2f", totalWage)} $currency",
+                            text = "${totalWage.toCurrencyFormat()} $currency",
                             style = MaterialTheme.typography.headlineMedium,
                             color = AccentGold,
                             fontWeight = FontWeight.Bold

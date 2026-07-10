@@ -1,5 +1,7 @@
 package com.example.ui.screens.employee
 
+import com.example.util.toCurrencyFormat
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -227,7 +229,7 @@ fun EmployeeCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "الأجر: ${String.format("%.2f", employee.currentDailyWage)} $currency",
+                        text = "الأجر: ${employee.currentDailyWage.toCurrencyFormat()} $currency",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                     )
@@ -241,7 +243,7 @@ fun EmployeeCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = String.format("%s%.2f", if (netPayable >= 0) "+" else "", netPayable),
+                        text = "${if (netPayable >= 0) "+" else ""}${netPayable.toCurrencyFormat()}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (netPayable >= 0) SuccessGreen else DangerRed

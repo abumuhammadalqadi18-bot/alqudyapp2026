@@ -20,7 +20,7 @@ class AppViewModelProvider(private val appContainer: AppContainer) : ViewModelPr
                 ) as T
             }
             modelClass.isAssignableFrom(EmployeeViewModel::class.java) -> {
-                EmployeeViewModel(appContainer.employeeRepository) as T
+                EmployeeViewModel(appContainer.employeeRepository, appContainer.wageRepository, appContainer.financeRepository) as T
             }
             modelClass.isAssignableFrom(WageViewModel::class.java) -> {
                 WageViewModel(appContainer.wageRepository, appContainer.employeeRepository) as T

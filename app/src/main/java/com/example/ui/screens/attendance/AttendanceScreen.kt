@@ -110,7 +110,8 @@ fun AttendanceScreen(
     val absentCount = attendanceMap.count { it.value.dayType == DayType.ABSENT }
     val totalCount = attendanceMap.size
 
-    val isAlreadySubmitted = uiState.hasAttendanceForSelectedDate
+    val submittedEmployeeIds = uiState.submittedEmployeeIds
+    val allSubmitted = uiState.activeEmployees.isNotEmpty() && uiState.activeEmployees.all { submittedEmployeeIds.contains(it.id) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -186,7 +187,7 @@ fun AttendanceScreen(
                     // Left Side: Button
                     Button(
                         onClick = {
-                            if (!isSaving && !isAlreadySubmitted) {
+                            if (!isSaving && !allSubmitted) {
                                 scope.launch {
                                     isSaving = true
                                     val sentEmployees = mutableListOf<EmployeeEntity>()
@@ -241,12 +242,12 @@ fun AttendanceScreen(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isAlreadySubmitted) Color.Gray else AccentGold,
+                            containerColor = if (allSubmitted) Color.Gray else AccentGold,
                             disabledContainerColor = Color.Gray
                         ),
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                        enabled = !isAlreadySubmitted
+                        enabled = !allSubmitted
                     ) {
                         if (isSaving) {
                             CircularProgressIndicator(
@@ -257,9 +258,9 @@ fun AttendanceScreen(
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = if (isAlreadySubmitted) "معتمد\nمسبقاً" else "اعتماد\nالتحضير",
+                                    text = if (allSubmitted) "معتمد\nمسبقاً" else "اعتماد\nالتحضير",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = if (isAlreadySubmitted) Color.White else Color(0xFF0F1B2B),
+                                    color = if (allSubmitted) Color.White else Color(0xFF0F1B2B),
                                     fontWeight = FontWeight.Bold,
                                     lineHeight = 16.sp
                                 )
@@ -267,7 +268,7 @@ fun AttendanceScreen(
                                 Icon(
                                     imageVector = Icons.Default.CheckCircleOutline,
                                     contentDescription = "اعتماد",
-                                    tint = if (isAlreadySubmitted) Color.White else Color(0xFF0F1B2B)
+                                    tint = if (allSubmitted) Color.White else Color(0xFF0F1B2B)
                                 )
                             }
                         }
@@ -418,16 +419,7 @@ fun AttendanceScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (isAlreadySubmitted) {
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "تم اعتماد التحضير لهذا اليوم.",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = SuccessGreen,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+            
 
             // 3. Employees List
             if (uiState.isLoading) {
@@ -456,7 +448,10 @@ fun AttendanceScreen(
                             employee = employee,
                             selection = selection,
                             onSelectionChange = { attendanceMap[employee.id] = it },
-                            enabled = !isAlreadySubmitted
+                            enabled = !allSubmitted,
+                            onUnapprove = {
+                                wageViewModel.deleteWage(employee.id, selectedDate)
+                            }
                         )
                     }
                 }
@@ -548,7 +543,8 @@ fun AttendanceLuxuryCard(
     employee: EmployeeEntity,
     selection: AttendanceSelection,
     onSelectionChange: (AttendanceSelection) -> Unit,
-    enabled: Boolean
+    enabled: Boolean,
+    onUnapprove: () -> Unit = {}
 ) {
     val indicatorColor = when (selection.dayType) {
         DayType.FULL_DAY -> SuccessGreen
@@ -638,26 +634,36 @@ fun AttendanceLuxuryCard(
                         }
                     }
                     
-                    // Status Badge
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(if (enabled) indicatorColor.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.15f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = when (selection.dayType) {
-                                DayType.FULL_DAY -> "يوم كامل"
-                                DayType.HALF_DAY -> "نصف يوم"
-                                DayType.LATE -> "متأخر"
-                                DayType.ABSENT -> "غائب"
-                                else -> ""
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (enabled) indicatorColor else Color.Gray,
-                            fontWeight = FontWeight.Bold
-                        )
+                    // Status Badge & Unapprove Button
+                    if (!enabled) {
+                        androidx.compose.material3.TextButton(
+                            onClick = onUnapprove,
+                            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(contentColor = DangerRed),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+                        ) {
+                            Text("إلغاء الاعتماد", style = MaterialTheme.typography.labelSmall)
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(indicatorColor.copy(alpha = 0.15f))
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = when (selection.dayType) {
+                                    DayType.FULL_DAY -> "يوم كامل"
+                                    DayType.HALF_DAY -> "نصف يوم"
+                                    DayType.LATE -> "متأخر"
+                                    DayType.ABSENT -> "غائب"
+                                    else -> ""
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = indicatorColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
                 

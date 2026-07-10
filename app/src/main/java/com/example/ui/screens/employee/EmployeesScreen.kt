@@ -157,6 +157,7 @@ fun EmployeesScreen(
                     items(filteredEmployees) { employee ->
                         EmployeeCard(
                             employee = employee,
+                            netPayable = uiState.netPayables[employee.id] ?: 0.0,
                             onClick = { onNavigateToAddEdit(employee.id) }
                         )
                     }
@@ -170,11 +171,12 @@ fun EmployeesScreen(
 @Composable
 fun EmployeeCard(
     employee: EmployeeEntity,
+    netPayable: Double,
     onClick: () -> Unit
 ) {
     val currency = LocalCurrencySymbol.current
     // Mock net payable for UI presentation
-    val netPayable = if (employee.id % 2L == 0L) 1500.0 else -50.0
+    
 
     Card(
         modifier = Modifier

@@ -22,6 +22,7 @@ data class WageUiState(
     val recentRecords: List<WageRecordEntity> = emptyList(),
     val activeEmployees: List<EmployeeEntity> = emptyList(),
     val hasAttendanceForSelectedDate: Boolean = false,
+    val submittedEmployeeIds: Set<Long> = emptySet(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null
 )
@@ -60,7 +61,11 @@ class WageViewModel(
                 val endOfDay = calendar.timeInMillis
 
                 val records = wageRepository.getRecordsInRange(startOfDay, endOfDay).firstOrNull() ?: emptyList()
-                _uiState.value = _uiState.value.copy(hasAttendanceForSelectedDate = records.isNotEmpty())
+                val submittedIds = records.map { it.employeeId }.toSet()
+                _uiState.value = _uiState.value.copy(
+                    hasAttendanceForSelectedDate = records.isNotEmpty(),
+                    submittedEmployeeIds = submittedIds
+                )
             } catch (e: Exception) {
                 // Ignore errors for this check
             }
@@ -158,4 +163,34 @@ class WageViewModel(
             errorMessage = "حدث خطأ: ${error.message}"
         )
     }
+
+    fun deleteWage(employeeId: Long, date: Long) {
+        viewModelScope.launch {
+            try {
+                val calendar = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                calendar.timeInMillis = date
+                calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                calendar.set(java.util.Calendar.MINUTE, 0)
+                calendar.set(java.util.Calendar.SECOND, 0)
+                calendar.set(java.util.Calendar.MILLISECOND, 0)
+                val startOfDay = calendar.timeInMillis
+                
+                calendar.set(java.util.Calendar.HOUR_OF_DAY, 23)
+                calendar.set(java.util.Calendar.MINUTE, 59)
+                calendar.set(java.util.Calendar.SECOND, 59)
+                calendar.set(java.util.Calendar.MILLISECOND, 999)
+                val endOfDay = calendar.timeInMillis
+                
+                val records = wageRepository.getRecordsInRange(startOfDay, endOfDay).firstOrNull() ?: emptyList()
+                val record = records.find { it.employeeId == employeeId }
+                if (record != null) {
+                    wageRepository.deleteWageRecord(record)
+                    checkAttendanceForDate(date)
+                }
+            } catch (e: Exception) {
+                handleError(e)
+            }
+        }
+    }
+
 }

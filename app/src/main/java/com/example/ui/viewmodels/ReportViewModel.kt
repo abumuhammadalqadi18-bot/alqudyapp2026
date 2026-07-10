@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.util.Calendar
@@ -246,6 +247,17 @@ class ReportViewModel(
     }
 
     suspend fun getNetPayableForEmployee(employeeId: Long): Double {
-        return 0.0 // Kept for backwards compatibility if needed. Logic migrated to flows.
+        val wages = wageRepository.getRecordsInRange(0L, Long.MAX_VALUE).firstOrNull() ?: emptyList()
+        val withdrawals = financeRepository.getWithdrawalsInRange(0L, Long.MAX_VALUE).firstOrNull() ?: emptyList()
+        val adjustments = financeRepository.getAdjustmentsInRange(0L, Long.MAX_VALUE).firstOrNull() ?: emptyList()
+        
+        val empWages = wages.filter { it.employeeId == employeeId }
+        val empWithdrawals = withdrawals.filter { it.employeeId == employeeId }
+        val empAdjs = adjustments.filter { it.employeeId == employeeId }
+        
+        val totalEarned = empWages.sumOf { it.finalAmount } + empAdjs.filter { it.type == com.example.domain.model.AdjustmentType.BONUS }.sumOf { it.amount }
+        val totalWithdrawn = empWithdrawals.sumOf { it.amount } + empAdjs.filter { it.type == com.example.domain.model.AdjustmentType.DEDUCTION }.sumOf { it.amount }
+        
+        return totalEarned - totalWithdrawn
     }
 }

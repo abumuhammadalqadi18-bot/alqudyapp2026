@@ -1,4 +1,6 @@
-package com.example.ui.viewmodels
+import os
+
+content = """package com.example.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -93,3 +95,6 @@ class HomeViewModel(
         // Now fully reactive, no manual trigger needed.
     }
 }
+"""
+with open("app/src/main/java/com/example/ui/viewmodels/HomeViewModel.kt", "w", encoding="utf-8") as f:
+    f.write(content)

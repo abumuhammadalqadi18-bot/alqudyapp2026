@@ -1,4 +1,6 @@
-package com.example.ui.viewmodels
+import re
+
+content = """package com.example.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -113,3 +115,8 @@ class EmployeeViewModel(
 
     fun clearError() {}
 }
+"""
+
+with open("app/src/main/java/com/example/ui/viewmodels/EmployeeViewModel.kt", "w", encoding="utf-8") as f:
+    f.write(content)
+

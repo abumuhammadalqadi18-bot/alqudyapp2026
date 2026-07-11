@@ -208,10 +208,13 @@ class SettingsViewModel(
                     newSettingsRepo.saveSetting("backup_schedule", state.backupSchedule)
                 }
                 _uiState.update { it.copy(isLocalRestoring = false, actionMessage = "تم استعادة البيانات بنجاح.") }
-                // Trigger live UI reload without killing process
+                // Trigger full app restart to ensure all ViewModels and DB connections are fresh
                 if (context is Activity) {
                     context.runOnUiThread {
-                        context.recreate()
+                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        context.startActivity(intent)
+                        Runtime.getRuntime().exit(0)
                     }
                 }
             } catch (e: Exception) {
@@ -281,10 +284,13 @@ class SettingsViewModel(
                     newSettingsRepo.saveSetting("backup_schedule", state.backupSchedule)
                 }
                 _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "تم استعادة النسخة السحابية بنجاح.") }
-                // Trigger live UI reload without killing process
+                // Trigger full app restart to ensure all ViewModels and DB connections are fresh
                 if (context is Activity) {
                     context.runOnUiThread {
-                        context.recreate()
+                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                        context.startActivity(intent)
+                        Runtime.getRuntime().exit(0)
                     }
                 }
             } catch (e: Exception) {

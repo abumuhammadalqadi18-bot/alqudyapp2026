@@ -56,7 +56,7 @@ fun LockScreen(
     var pinCode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
-    val defaultPin = "1234" // In a real app, this should be stored securely
+    
 
     val showBiometricPrompt = {
         val activity = context as? FragmentActivity
@@ -92,8 +92,8 @@ fun LockScreen(
         }
     }
 
-    LaunchedEffect(uiState.lockType) {
-        if (uiState.lockType == "BIOMETRIC") {
+    LaunchedEffect(uiState.isBiometricEnabled) {
+        if (uiState.isBiometricEnabled) {
             showBiometricPrompt()
         }
     }
@@ -190,7 +190,7 @@ fun LockScreen(
                                     pinCode += key
                                     errorMessage = null
                                     if (pinCode.length == 4) {
-                                        if (pinCode == defaultPin) {
+                                        if (pinCode == uiState.pinCode) {
                                             onUnlockSuccess()
                                         } else {
                                             errorMessage = "الرمز السري غير صحيح"
@@ -214,7 +214,7 @@ fun LockScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
         
-        if (uiState.lockType == "BIOMETRIC") {
+        if (uiState.isBiometricEnabled) {
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = { showBiometricPrompt() },

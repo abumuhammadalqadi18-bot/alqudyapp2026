@@ -1,4 +1,4 @@
-package com.example.ui.viewmodels
+content = """package com.example.ui.viewmodels
 
 import android.app.Activity
 import android.content.Context
@@ -266,3 +266,6 @@ class SettingsViewModel(
         _uiState.update { it.copy(errorMessage = null) }
     }
 }
+"""
+with open("app/src/main/java/com/example/ui/viewmodels/SettingsViewModel.kt", "w", encoding="utf-8") as f:
+    f.write(content)

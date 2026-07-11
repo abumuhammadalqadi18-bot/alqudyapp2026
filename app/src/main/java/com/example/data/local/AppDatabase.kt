@@ -50,6 +50,11 @@ abstract class AppDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
+        fun resetInstance() {
+            INSTANCE?.close()
+            INSTANCE = null
+        }
+
         fun getDatabase(context: Context, passphrase: ByteArray): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 // Determine if we are running under Robolectric

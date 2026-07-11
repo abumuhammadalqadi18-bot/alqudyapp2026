@@ -70,7 +70,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
     }
 
     val cloudBackupLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+        contract = com.example.ui.screens.settings.CloudCreateDocument("application/octet-stream")
     ) { uri ->
         uri?.let {
             settingsViewModel.backupToCloud(context, it)
@@ -78,7 +78,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
     }
 
     val cloudRestoreLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = com.example.ui.screens.settings.CloudOpenDocument()
     ) { uri ->
         uri?.let {
             settingsViewModel.restoreFromCloud(context, it)
@@ -226,6 +226,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                                 if (uiState.isPinLockEnabled) {
                                     settingsViewModel.setPinLockEnabled(false)
                                     settingsViewModel.setPinCode("")
+                                    settingsViewModel.setPinCode("")
                                 } else {
                                     showPinDialog = true
                                 }
@@ -245,6 +246,7 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                                     showPinDialog = true
                                 } else {
                                     settingsViewModel.setPinLockEnabled(false)
+                                    settingsViewModel.setPinCode("")
                                     settingsViewModel.setPinCode("")
                                 }
                             },

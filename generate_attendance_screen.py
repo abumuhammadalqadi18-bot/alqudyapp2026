@@ -1,4 +1,4 @@
-package com.example.ui.screens.attendance
+content = """package com.example.ui.screens.attendance
 
 import com.example.util.toCurrencyFormat
 import androidx.compose.animation.animateContentSize
@@ -571,3 +571,6 @@ fun RowScope.DayTypeChip(
         )
     }
 }
+"""
+with open("app/src/main/java/com/example/ui/screens/attendance/AttendanceScreen.kt", "w", encoding="utf-8") as f:
+    f.write(content)

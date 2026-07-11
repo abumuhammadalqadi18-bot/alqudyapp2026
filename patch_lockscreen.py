@@ -1,13 +1,36 @@
+import re
+
 with open("app/src/main/java/com/example/ui/screens/lock/LockScreen.kt", "r") as f:
     content = f.read()
 
-content = content.replace('val defaultPin = "1234" // In a real app, this should be stored securely', '')
-content = content.replace('if (pinCode == defaultPin) {', 'if (pinCode == uiState.pinCode) {')
+# Add imports
+if "CompositionLocalProvider" not in content:
+    content = content.replace("import androidx.compose.ui.Modifier", "import androidx.compose.runtime.CompositionLocalProvider\nimport androidx.compose.ui.platform.LocalLayoutDirection\nimport androidx.compose.ui.unit.LayoutDirection\nimport androidx.compose.ui.Modifier")
 
-# For the launch effect, check if biometric is enabled
-content = content.replace('LaunchedEffect(uiState.lockType) {', 'LaunchedEffect(uiState.isBiometricEnabled) {')
-content = content.replace('if (uiState.lockType == "BIOMETRIC") {', 'if (uiState.isBiometricEnabled) {')
-content = content.replace('if (uiState.lockType == "BIOMETRIC") {', 'if (uiState.isBiometricEnabled) {')
+# Find the keypad generation and wrap it
+keypad_code_target = """        keys.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {"""
+
+keypad_code_replacement = """        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+            keys.forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {"""
+
+content = content.replace(keypad_code_target, keypad_code_replacement)
+
+# End of keypad loop
+end_target = """            Spacer(modifier = Modifier.height(8.dp))
+        }"""
+
+end_replacement = """            Spacer(modifier = Modifier.height(8.dp))
+            }
+        }"""
+content = content.replace(end_target, end_replacement)
 
 with open("app/src/main/java/com/example/ui/screens/lock/LockScreen.kt", "w") as f:
     f.write(content)

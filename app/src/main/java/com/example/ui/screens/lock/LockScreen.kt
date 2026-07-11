@@ -4,17 +4,7 @@ import android.widget.Toast
 import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,7 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -56,8 +49,6 @@ fun LockScreen(
     var pinCode by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
-    
-
     val showBiometricPrompt = {
         val activity = context as? FragmentActivity
         if (activity != null) {
@@ -98,132 +89,134 @@ fun LockScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Fingerprint,
-            contentDescription = "قفل التطبيق",
-            tint = AccentGold,
-            modifier = Modifier.size(64.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "أدخل الرمز السري",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // PIN Indicator
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            for (i in 0 until 4) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (i < pinCode.length) AccentGold else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
-                        )
-                )
-                if (i < 3) Spacer(modifier = Modifier.width(16.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        AnimatedVisibility(visible = errorMessage != null) {
-            Text(
-                text = errorMessage ?: "",
-                color = DangerRed,
-                style = MaterialTheme.typography.bodyMedium
+            Icon(
+                imageVector = Icons.Default.Fingerprint,
+                contentDescription = "قفل التطبيق",
+                tint = AccentGold,
+                modifier = Modifier.size(64.dp)
             )
-        }
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "أدخل الرمز السري",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Keypad
-        val keys = listOf(
-            listOf("1", "2", "3"),
-            listOf("4", "5", "6"),
-            listOf("7", "8", "9"),
-            listOf("", "0", "del")
-        )
-
-        keys.forEach { row ->
+            // PIN Indicator
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                row.forEach { key ->
-                    if (key.isEmpty()) {
-                        Spacer(modifier = Modifier.size(72.dp))
-                    } else if (key == "del") {
-                        IconButton(
-                            onClick = {
-                                if (pinCode.isNotEmpty()) {
-                                    pinCode = pinCode.dropLast(1)
-                                    errorMessage = null
-                                }
-                            },
-                            modifier = Modifier.size(72.dp)
-                        ) {
-                            @Suppress("DEPRECATION")
-                            Icon(
-                                imageVector = Icons.Default.Backspace,
-                                contentDescription = "مسح",
-                                tint = MaterialTheme.colorScheme.onBackground
+                for (i in 0 until 4) {
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (i < pinCode.length) AccentGold else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.2f)
                             )
-                        }
-                    } else {
-                        TextButton(
-                            onClick = {
-                                if (pinCode.length < 4) {
-                                    pinCode += key
-                                    errorMessage = null
-                                    if (pinCode.length == 4) {
-                                        if (pinCode == uiState.pinCode) {
-                                            onUnlockSuccess()
-                                        } else {
-                                            errorMessage = "الرمز السري غير صحيح"
-                                            pinCode = ""
+                    )
+                    if (i < 3) Spacer(modifier = Modifier.width(16.dp))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            AnimatedVisibility(visible = errorMessage != null) {
+                Text(
+                    text = errorMessage ?: "",
+                    color = DangerRed,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Keypad
+            val keys = listOf(
+                listOf("1", "2", "3"),
+                listOf("4", "5", "6"),
+                listOf("7", "8", "9"),
+                listOf("", "0", "del")
+            )
+
+            keys.forEach { row ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    row.forEach { key ->
+                        if (key.isEmpty()) {
+                            Spacer(modifier = Modifier.size(72.dp))
+                        } else if (key == "del") {
+                            IconButton(
+                                onClick = {
+                                    if (pinCode.isNotEmpty()) {
+                                        pinCode = pinCode.dropLast(1)
+                                        errorMessage = null
+                                    }
+                                },
+                                modifier = Modifier.size(72.dp)
+                            ) {
+                                @Suppress("DEPRECATION")
+                                Icon(
+                                    imageVector = Icons.Default.Backspace,
+                                    contentDescription = "مسح",
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+                        } else {
+                            TextButton(
+                                onClick = {
+                                    if (pinCode.length < 4) {
+                                        pinCode += key
+                                        errorMessage = null
+                                        if (pinCode.length == 4) {
+                                            if (pinCode == uiState.pinCode) {
+                                                onUnlockSuccess()
+                                            } else {
+                                                errorMessage = "الرمز السري غير صحيح"
+                                                pinCode = ""
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            modifier = Modifier.size(72.dp),
-                            shape = CircleShape
-                        ) {
-                            Text(
-                                text = key,
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = MaterialTheme.colorScheme.onBackground
-                            )
+                                },
+                                modifier = Modifier.size(72.dp),
+                                shape = CircleShape
+                            ) {
+                                Text(
+                                    text = key,
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-        
-        if (uiState.isBiometricEnabled) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { showBiometricPrompt() },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Fingerprint, contentDescription = null, tint = AccentGold)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("استخدام البصمة", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            
+            if (uiState.isBiometricEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = { showBiometricPrompt() },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Fingerprint, contentDescription = null, tint = AccentGold)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("استخدام البصمة", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

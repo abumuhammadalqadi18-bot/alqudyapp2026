@@ -3,6 +3,13 @@ package com.example.ui.viewmodels
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
+import androidx.work.WorkManager
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.Constraints
+import androidx.work.NetworkType
+import com.example.worker.BackupWorker
+import java.util.concurrent.TimeUnit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.AlQadiApplication
@@ -30,6 +37,7 @@ data class SettingsUiState(
     val isBiometricEnabled: Boolean = false,
     val isAppLockEnabled: Boolean = false,
     val lockType: String = "BIOMETRIC",
+    val backupSchedule: String = "MANUAL",
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val isLocalSaving: Boolean = false,
@@ -93,6 +101,11 @@ class SettingsViewModel(
                         isAppLockEnabled = value || it.isPinLockEnabled
                     ) 
                 }
+            }
+        }
+                viewModelScope.launch {
+            settingsRepository.getSettingFlow("backup_schedule", "MANUAL").collect { value ->
+                _uiState.update { it.copy(backupSchedule = value) }
             }
         }
         _uiState.update { it.copy(isLoading = false) }
@@ -162,6 +175,7 @@ class SettingsViewModel(
             _uiState.update { it.copy(isLocalRestoring = true) }
             try {
                 withContext(Dispatchers.IO) {
+                    val state = _uiState.value
                     val app = context.applicationContext as AlQadiApplication
                     // Defensive DB shutdown
                     app.container.database.close()
@@ -182,6 +196,16 @@ class SettingsViewModel(
                     
                     // Re-instantiate AppContainer
                     app.container = AppContainer(app)
+                    
+                    // Restore settings
+                    val newSettingsRepo = SettingsRepository(app.container.database.settingDao())
+                    newSettingsRepo.saveSetting("theme_mode", state.themeMode)
+                    newSettingsRepo.saveSetting("currency_symbol", state.currencySymbol)
+                    newSettingsRepo.saveBooleanSetting("auto_sms_enabled", state.isAutoSmsEnabled)
+                    newSettingsRepo.saveBooleanSetting("pin_lock_enabled", state.isPinLockEnabled)
+                    newSettingsRepo.saveSetting("pin_code", state.pinCode)
+                    newSettingsRepo.saveBooleanSetting("biometric_enabled", state.isBiometricEnabled)
+                    newSettingsRepo.saveSetting("backup_schedule", state.backupSchedule)
                 }
                 _uiState.update { it.copy(isLocalRestoring = false, actionMessage = "تم استعادة البيانات بنجاح.") }
                 // Trigger live UI reload without killing process
@@ -224,6 +248,7 @@ class SettingsViewModel(
             _uiState.update { it.copy(isCloudRestoring = true) }
             try {
                 withContext(Dispatchers.IO) {
+                    val state = _uiState.value
                     val app = context.applicationContext as AlQadiApplication
                     // Defensive DB shutdown
                     app.container.database.close()
@@ -244,6 +269,16 @@ class SettingsViewModel(
                     
                     // Re-instantiate AppContainer
                     app.container = AppContainer(app)
+                    
+                    // Restore settings
+                    val newSettingsRepo = SettingsRepository(app.container.database.settingDao())
+                    newSettingsRepo.saveSetting("theme_mode", state.themeMode)
+                    newSettingsRepo.saveSetting("currency_symbol", state.currencySymbol)
+                    newSettingsRepo.saveBooleanSetting("auto_sms_enabled", state.isAutoSmsEnabled)
+                    newSettingsRepo.saveBooleanSetting("pin_lock_enabled", state.isPinLockEnabled)
+                    newSettingsRepo.saveSetting("pin_code", state.pinCode)
+                    newSettingsRepo.saveBooleanSetting("biometric_enabled", state.isBiometricEnabled)
+                    newSettingsRepo.saveSetting("backup_schedule", state.backupSchedule)
                 }
                 _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "تم استعادة النسخة السحابية بنجاح.") }
                 // Trigger live UI reload without killing process
@@ -254,6 +289,33 @@ class SettingsViewModel(
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "فشل الاستعادة السحابية: ${e.message}") }
+            }
+        }
+    }
+
+        fun setBackupSchedule(context: Context, schedule: String) {
+        viewModelScope.launch {
+            settingsRepository.saveSetting("backup_schedule", schedule)
+            
+            val workManager = WorkManager.getInstance(context)
+            if (schedule == "MANUAL") {
+                workManager.cancelUniqueWork("AutoBackup")
+            } else {
+                val repeatInterval = if (schedule == "DAILY") 1L else 7L
+                val constraints = Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.UNMETERED)
+                    .setRequiresCharging(true)
+                    .build()
+                    
+                val backupRequest = PeriodicWorkRequestBuilder<BackupWorker>(repeatInterval, TimeUnit.DAYS)
+                    .setConstraints(constraints)
+                    .build()
+                    
+                workManager.enqueueUniquePeriodicWork(
+                    "AutoBackup",
+                    ExistingPeriodicWorkPolicy.UPDATE,
+                    backupRequest
+                )
             }
         }
     }

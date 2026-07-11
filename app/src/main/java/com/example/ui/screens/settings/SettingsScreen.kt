@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.ui.theme.RoyalNavy
+import com.example.ui.theme.DangerRed
 import com.example.ui.viewmodels.SettingsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,6 +46,9 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
 
     var showPinDialog by remember { mutableStateOf(false) }
     var tempPin by remember { mutableStateOf("") }
+    var showRestoreConfirmDialog by remember { mutableStateOf(false) }
+    var pendingRestoreUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pendingRestoreType by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState.actionMessage) {
         uiState.actionMessage?.let {
@@ -65,7 +69,9 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            settingsViewModel.restoreFromLocal(context, it)
+            pendingRestoreUri = it
+            pendingRestoreType = "LOCAL"
+            showRestoreConfirmDialog = true
         }
     }
 
@@ -81,7 +87,9 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
         contract = com.example.ui.screens.settings.CloudOpenDocument()
     ) { uri ->
         uri?.let {
-            settingsViewModel.restoreFromCloud(context, it)
+            pendingRestoreUri = it
+            pendingRestoreType = "CLOUD"
+            showRestoreConfirmDialog = true
         }
     }
 
@@ -336,6 +344,37 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                             cloudRestoreLauncher.launch(arrayOf("*/*"))
                         }
                     )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    
+                    Text(
+                        text = "جدولة النسخ الاحتياطي التلقائي (في الخلفية أثناء الشحن والاتصال بالـ Wi-Fi)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = RoyalNavy,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                    
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val schedules = listOf("MANUAL" to "يدوي", "DAILY" to "تلقائي يومي", "WEEKLY" to "تلقائي أسبوعي")
+                        schedules.forEach { (key, label) ->
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { settingsViewModel.setBackupSchedule(context, key) }) {
+                                RadioButton(
+                                    selected = uiState.backupSchedule == key,
+                                    onClick = { settingsViewModel.setBackupSchedule(context, key) },
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = label, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -388,6 +427,44 @@ fun SettingsScreen(settingsViewModel: SettingsViewModel) {
                 Spacer(modifier = Modifier.height(32.dp))
             }
         }
+    }
+
+    
+    if (showRestoreConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showRestoreConfirmDialog = false 
+                pendingRestoreUri = null
+            },
+            title = { Text("تنبيه حرج", color = DangerRed) },
+            text = { Text("هل أنت متأكد من استعادة هذه النسخة الاحتياطية؟ سيتم حذف واستبدال كافة البيانات الحالية وسجلات الموظفين والحركات المالية الموجودة في التطبيق بالبيانات المستوردة فوراً، ولا يمكن التراجع عن هذا الإجراء.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showRestoreConfirmDialog = false
+                        pendingRestoreUri?.let { uri ->
+                            if (pendingRestoreType == "LOCAL") {
+                                settingsViewModel.restoreFromLocal(context, uri)
+                            } else {
+                                settingsViewModel.restoreFromCloud(context, uri)
+                            }
+                        }
+                        pendingRestoreUri = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DangerRed)
+                ) {
+                    Text("تأكيد الاستبدال", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { 
+                    showRestoreConfirmDialog = false 
+                    pendingRestoreUri = null
+                }) {
+                    Text("إلغاء")
+                }
+            }
+        )
     }
 
     if (showPinDialog) {

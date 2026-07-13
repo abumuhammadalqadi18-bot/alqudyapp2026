@@ -1,6 +1,5 @@
 package com.example.ui.viewmodels
 
-import android.app.Activity
 import android.content.Context
 import android.net.Uri
 import androidx.work.WorkManager
@@ -212,15 +211,8 @@ class SettingsViewModel(
                 }
                 _uiState.update { it.copy(isLocalRestoring = false, actionMessage = "تم استعادة البيانات بنجاح.") }
                 // Trigger full app restart to ensure all ViewModels and DB connections are fresh
-                if (context is Activity) {
-                    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
-                    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
-                        if (context is androidx.activity.ComponentActivity) {
-                            context.viewModelStore.clear()
-                        }
-                        context.recreate()
-                    }
-                }
+                val app = context.applicationContext as AlQadiApplication
+                app.resetContainer()
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLocalRestoring = false, actionMessage = "فشل استعادة البيانات: ${e.message}") }
             }
@@ -292,15 +284,8 @@ class SettingsViewModel(
                 }
                 _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "تم استعادة النسخة السحابية بنجاح.") }
                 // Trigger full app restart to ensure all ViewModels and DB connections are fresh
-                if (context is Activity) {
-                    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
-                    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
-                        if (context is androidx.activity.ComponentActivity) {
-                            context.viewModelStore.clear()
-                        }
-                        context.recreate()
-                    }
-                }
+                val app = context.applicationContext as AlQadiApplication
+                app.resetContainer()
             } catch (e: Exception) {
                 _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "فشل الاستعادة السحابية: ${e.message}") }
             }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Menu
@@ -44,8 +45,42 @@ fun DashboardScreen(
     val currency = LocalCurrencySymbol.current
     val scrollState = rememberScrollState()
 
+    var showFabMenu by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        floatingActionButton = {
+            Box {
+                FloatingActionButton(
+                    onClick = { showFabMenu = true },
+                    containerColor = AccentGold,
+                    contentColor = Color(0xFF0F1B2B), // Dark Navy
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Add, contentDescription = "خيارات الإضافة")
+                }
+                DropdownMenu(
+                    expanded = showFabMenu,
+                    onDismissRequest = { showFabMenu = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("تسجيل أجر", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            showFabMenu = false
+                            onNavigateToAttendance()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("تسجيل سحب", color = MaterialTheme.colorScheme.onSurface) },
+                        onClick = {
+                            showFabMenu = false
+                            onNavigateToAdvances()
+                        }
+                    )
+                }
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { 

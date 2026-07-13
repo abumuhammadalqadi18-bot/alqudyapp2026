@@ -43,7 +43,7 @@ import com.example.ui.viewmodels.GeneralReportSummary
 import com.example.ui.viewmodels.TransactionItem
 import com.example.ui.viewmodels.TransactionType
 import com.example.util.PdfHelper
-import com.example.util.ExcelHelper
+import com.example.util.CsvExportHelper
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,7 +135,7 @@ fun EmployeeStatementTab(
         if (uri != null && state.selectedEmployeeId != null && state.employeeSummary != null) {
             val empDetail = state.employees.find { it.id == state.selectedEmployeeId }
             if (empDetail != null) {
-                ExcelHelper.exportEmployeeStatementCsv(context, uri, empDetail, state.employeeTransactions, currency)
+                CsvExportHelper.exportEmployeeStatementCsv(context, uri, empDetail, state.employeeTransactions, currency)
             }
         }
     }
@@ -292,7 +292,7 @@ fun GeneralReportsTab(
     }
     val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
         if (uri != null) {
-            ExcelHelper.exportGeneralReportCsv(context, uri, state.generalRecords, state.generalFilter, currency)
+            CsvExportHelper.exportGeneralReportCsv(context, uri, state.generalRecords, state.generalFilter, currency)
         }
     }
 

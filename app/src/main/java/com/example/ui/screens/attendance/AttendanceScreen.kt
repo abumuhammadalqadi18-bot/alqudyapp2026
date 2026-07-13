@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -49,7 +51,10 @@ import com.example.ui.utils.getUtcMidnight
 
 data class AttendanceSelection(
     val dayType: DayType = DayType.FULL_DAY,
-    val note: String = ""
+    val note: String = "",
+    val hours: String = "",
+    val customAmount: String = "",
+    val manualAmount: String = ""
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,7 +82,7 @@ fun AttendanceScreen(
     LaunchedEffect(uiState.activeEmployees) {
         if (attendanceMap.isEmpty() && uiState.activeEmployees.isNotEmpty()) {
             uiState.activeEmployees.forEach { employee ->
-                attendanceMap[employee.id] = AttendanceSelection(DayType.FULL_DAY, "")
+                attendanceMap[employee.id] = AttendanceSelection(DayType.FULL_DAY, "", "", "", "")
             }
         }
     }
@@ -95,11 +100,23 @@ fun AttendanceScreen(
             val record = uiState.recentRecords.find { it.employeeId == emp.id && it.wageDate == selectedDate }
             record?.finalAmount ?: 0.0
         } else {
-            val selection = attendanceMap[emp.id] ?: AttendanceSelection(DayType.FULL_DAY, "")
-            when (selection.dayType) {
-                DayType.FULL_DAY, DayType.LATE -> emp.currentDailyWage
-                DayType.HALF_DAY -> emp.currentDailyWage / 2.0
-                else -> 0.0
+            val selection = attendanceMap[emp.id] ?: AttendanceSelection(DayType.FULL_DAY, "", "", "", "")
+                        val manual = selection.manualAmount.toDoubleOrNull()
+            if (manual != null) {
+                manual
+            } else if (selection.dayType == DayType.CUSTOM) {
+                selection.customAmount.toDoubleOrNull() ?: 0.0
+            } else {
+                when (selection.dayType) {
+                    DayType.FULL_DAY, DayType.LATE -> emp.currentDailyWage
+                    DayType.HALF_DAY -> emp.currentDailyWage / 2
+                    DayType.HOURS -> {
+                        val hrs = selection.hours.toDoubleOrNull() ?: 0.0
+                        (emp.currentDailyWage / 8) * hrs
+                    }
+                    DayType.ABSENT -> 0.0
+                    else -> 0.0
+                }
             }
         }
     }
@@ -271,7 +288,7 @@ fun AttendanceScreen(
                 ) {
                     items(filteredEmployees, key = { it.id }) { employee ->
                         val isSubmitted = submittedEmployeeIds.contains(employee.id)
-                        val selection = attendanceMap[employee.id] ?: AttendanceSelection(DayType.FULL_DAY, "")
+                        val selection = attendanceMap[employee.id] ?: AttendanceSelection(DayType.FULL_DAY, "", "", "", "")
                         
                         AttendanceLuxuryCard(
                             employee = employee,
@@ -280,12 +297,16 @@ fun AttendanceScreen(
                             onSelectionChange = { attendanceMap[employee.id] = it },
                             onApprove = {
                                 scope.launch {
-                                    val sel = attendanceMap[employee.id] ?: AttendanceSelection(DayType.FULL_DAY, "")
+                                    val sel = attendanceMap[employee.id] ?: AttendanceSelection(DayType.FULL_DAY, "", "", "", "")
+                                    val manual = sel.manualAmount.toDoubleOrNull()
+                                    val finalOverride = if (manual != null) manual else if (sel.dayType == DayType.CUSTOM) sel.customAmount.toDoubleOrNull() else null
                                     wageViewModel.recordWage(
                                         employeeId = employee.id,
                                         date = selectedDate,
                                         dayType = sel.dayType,
-                                        notes = sel.note.takeIf { it.isNotBlank() }
+                                        hoursWorked = sel.hours.toDoubleOrNull(),
+                                        notes = sel.note.takeIf { it.isNotBlank() },
+                                        finalAmountOverride = finalOverride
                                     )
                                     delay(500)
                                     wageViewModel.checkAttendanceForDate(selectedDate)
@@ -481,6 +502,7 @@ fun AttendanceLuxuryCard(
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                         Spacer(modifier = Modifier.height(16.dp))
                         
+                        // Top Row of chips
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
@@ -500,6 +522,25 @@ fun AttendanceLuxuryCard(
                             DayTypeChip(
                                 label = "متأخر",
                                 type = DayType.LATE,
+                                selectedType = selection.dayType,
+                                onClick = { onSelectionChange(selection.copy(dayType = it)) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // Bottom Row of chips
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            DayTypeChip(
+                                label = "ساعات",
+                                type = DayType.HOURS,
+                                selectedType = selection.dayType,
+                                onClick = { onSelectionChange(selection.copy(dayType = it)) }
+                            )
+                            DayTypeChip(
+                                label = "أجر مخصص",
+                                type = DayType.CUSTOM,
                                 selectedType = selection.dayType,
                                 onClick = { onSelectionChange(selection.copy(dayType = it)) }
                             )
@@ -532,6 +573,67 @@ fun AttendanceLuxuryCard(
                                 unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
                             )
                         )
+                        
+                        if (selection.dayType == DayType.HOURS) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedTextField(
+                                value = selection.hours,
+                                onValueChange = { onSelectionChange(selection.copy(hours = it)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("عدد الساعات", style = MaterialTheme.typography.bodyMedium) },
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentGold, 
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                )
+                            )
+                        } else if (selection.dayType == DayType.CUSTOM) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedTextField(
+                                value = selection.customAmount,
+                                onValueChange = { onSelectionChange(selection.copy(customAmount = it)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("المبلغ المخصص", style = MaterialTheme.typography.bodyMedium) },
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentGold, 
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                )
+                            )
+                        }
+                        
+                        if (selection.dayType != DayType.ABSENT && selection.dayType != DayType.CUSTOM) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            val currentCalc = when (selection.dayType) {
+                                DayType.FULL_DAY, DayType.LATE -> employee.currentDailyWage
+                                DayType.HALF_DAY -> employee.currentDailyWage / 2
+                                DayType.HOURS -> {
+                                    val hrs = selection.hours.toDoubleOrNull() ?: 0.0
+                                    (employee.currentDailyWage / 8) * hrs
+                                }
+                                else -> 0.0
+                            }
+                            OutlinedTextField(
+                                value = selection.manualAmount,
+                                onValueChange = { onSelectionChange(selection.copy(manualAmount = it)) },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text("تعديل يدوي (اختياري) - المحسوب: ${currentCalc}", style = MaterialTheme.typography.bodyMedium) },
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentGold, 
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                )
+                            )
+                        }
                     }
                 }
             }

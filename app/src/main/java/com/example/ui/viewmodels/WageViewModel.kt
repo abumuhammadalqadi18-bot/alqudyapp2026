@@ -97,7 +97,8 @@ class WageViewModel(
         date: Long,
         dayType: DayType,
         hoursWorked: Double? = null,
-        notes: String? = null
+        notes: String? = null,
+        finalAmountOverride: Double? = null
     ) {
         viewModelScope.launch {
             try {
@@ -112,7 +113,7 @@ class WageViewModel(
                 val calculatedAmount = calculateWageAmount(currentWage, dayType, hoursWorked)
                 
                 // For simplicity, final amount equals calculated amount initially (can be modified later)
-                val finalAmount = calculatedAmount
+                val finalAmount = finalAmountOverride ?: calculatedAmount
 
                 val record = WageRecordEntity(
                     employeeId = employeeId,

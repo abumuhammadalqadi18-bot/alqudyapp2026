@@ -33,7 +33,4 @@ class EmployeeRepository(private val employeeDao: EmployeeDao) {
         employeeDao.archiveEmployee(id)
     }
 
-    suspend fun deleteEmployee(employee: EmployeeEntity) {
-        employeeDao.delete(employee)
-    }
 }

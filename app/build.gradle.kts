@@ -1,12 +1,9 @@
-import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
 
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
-  alias(libs.plugins.roborazzi)
   alias(libs.plugins.secrets)
-  alias(libs.plugins.google.services)
   alias(libs.plugins.kotlin.serialization)
 }
 
@@ -15,7 +12,7 @@ android {
   compileSdk { version = release(36) { minorApiLevel = 1 } }
 
   defaultConfig {
-    applicationId = "com.aistudio.androidapp.mxaqpw"
+    applicationId = "com.qadi.app"
     minSdk = 26
     targetSdk = 36
     versionCode = 1
@@ -85,15 +82,11 @@ secrets {
   defaultPropertiesFileName = ".env.example"
 }
 
-googleServices {
-  missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN
-}
 
 
 dependencies {
   implementation("androidx.work:work-runtime-ktx:2.9.0")
   implementation(platform(libs.androidx.compose.bom))
-  implementation(platform(libs.firebase.bom))
   
   // Compose
   implementation(libs.androidx.activity.compose)
@@ -140,16 +133,8 @@ dependencies {
   implementation(libs.kotlinx.serialization.json)
   
   // Network (already present)
-  implementation(libs.retrofit)
-  implementation(libs.converter.moshi)
-  implementation(libs.logging.interceptor)
-  implementation(libs.okhttp)
-  implementation(libs.moshi.kotlin)
-  "ksp"(libs.moshi.kotlin.codegen)
   
   // Firebase (already present)
-  implementation(libs.firebase.ai)
-  implementation(libs.firebase.appcheck.recaptcha)
   
   // Tests
   testImplementation(libs.androidx.compose.ui.test.junit4)
@@ -158,9 +143,6 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
-  testImplementation(libs.roborazzi)
-  testImplementation(libs.roborazzi.compose)
-  testImplementation(libs.roborazzi.junit.rule)
   
   androidTestImplementation(platform(libs.androidx.compose.bom))
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)

@@ -70,14 +70,14 @@ fun SplashScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "القاضي",
+                text = androidx.compose.ui.res.stringResource(com.example.R.string.app_name),
                 style = MaterialTheme.typography.headlineLarge,
                 color = AccentGold,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "القاضي لإدارة الأجور – العدل في كل حساب",
+                text = androidx.compose.ui.res.stringResource(com.example.R.string.app_tagline),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
             )

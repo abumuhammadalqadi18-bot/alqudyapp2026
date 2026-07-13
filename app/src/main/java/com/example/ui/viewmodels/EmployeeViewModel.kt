@@ -101,15 +101,6 @@ class EmployeeViewModel(
         }
     }
 
-    fun deleteEmployee(employee: EmployeeEntity, onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            try {
-                employeeRepository.deleteEmployee(employee)
-                onSuccess()
-            } catch (e: Exception) {
-            }
-        }
-    }
 
     fun clearError() {}
 }

@@ -498,9 +498,9 @@ fun AddEditEmployeeScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            employeeViewModel.deleteEmployee(employee) {
-                                onNavigateBack()
-                            }
+                            employeeViewModel.archiveEmployee(employee.id)
+                            onNavigateBack()
+
                             showDeleteDialog = false
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = DangerRed)

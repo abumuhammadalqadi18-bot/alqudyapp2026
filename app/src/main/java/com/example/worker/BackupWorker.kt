@@ -18,6 +18,9 @@ class BackupWorker(
 
     override suspend fun doWork(): Result {
         return try {
+            val app = context.applicationContext as com.example.AlQadiApplication
+            app.container.database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").use { it.moveToFirst() }
+
             val dbFile = context.getDatabasePath("alqadi_database.db")
             if (dbFile.exists()) {
                 val backupDir = File(context.getExternalFilesDir(null), "backups")

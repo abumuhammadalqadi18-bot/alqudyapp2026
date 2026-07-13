@@ -1,16 +1,18 @@
 package com.example.ui.viewmodels
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.di.AppContainer
+import com.example.AlQadiApplication
 
 /**
  * Factory class to instantiate ViewModels and inject dependencies from AppContainer.
  * مزود مصنع لإنشاء الـ ViewModels وحقن الاعتماديات من الـ AppContainer.
  */
-class AppViewModelProvider(private val appContainer: AppContainer) : ViewModelProvider.Factory {
+class AppViewModelProvider(private val application: Application) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        val appContainer = (application as AlQadiApplication).container
         return when {
             modelClass.isAssignableFrom(HomeViewModel::class.java) -> {
                 HomeViewModel(

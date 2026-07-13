@@ -152,6 +152,9 @@ class SettingsViewModel(
             _uiState.update { it.copy(isLocalSaving = true) }
             try {
                 withContext(Dispatchers.IO) {
+                    val app = context.applicationContext as com.example.AlQadiApplication
+                    app.container.database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").use { it.moveToFirst() }
+                    
                     val dbFile = context.getDatabasePath("alqadi_database.db")
                     if (dbFile.exists()) {
                         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
@@ -210,11 +213,12 @@ class SettingsViewModel(
                 _uiState.update { it.copy(isLocalRestoring = false, actionMessage = "تم استعادة البيانات بنجاح.") }
                 // Trigger full app restart to ensure all ViewModels and DB connections are fresh
                 if (context is Activity) {
-                    context.runOnUiThread {
-                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        context.startActivity(intent)
-                        Runtime.getRuntime().exit(0)
+                    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+                    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                        if (context is androidx.activity.ComponentActivity) {
+                            context.viewModelStore.clear()
+                        }
+                        context.recreate()
                     }
                 }
             } catch (e: Exception) {
@@ -228,6 +232,9 @@ class SettingsViewModel(
             _uiState.update { it.copy(isCloudSaving = true) }
             try {
                 withContext(Dispatchers.IO) {
+                    val app = context.applicationContext as com.example.AlQadiApplication
+                    app.container.database.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").use { it.moveToFirst() }
+                    
                     val dbFile = context.getDatabasePath("alqadi_database.db")
                     if (dbFile.exists()) {
                         context.contentResolver.openOutputStream(uri)?.use { outputStream ->
@@ -286,11 +293,12 @@ class SettingsViewModel(
                 _uiState.update { it.copy(isCloudRestoring = false, actionMessage = "تم استعادة النسخة السحابية بنجاح.") }
                 // Trigger full app restart to ensure all ViewModels and DB connections are fresh
                 if (context is Activity) {
-                    context.runOnUiThread {
-                        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-                        intent?.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                        context.startActivity(intent)
-                        Runtime.getRuntime().exit(0)
+                    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+                    kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                        if (context is androidx.activity.ComponentActivity) {
+                            context.viewModelStore.clear()
+                        }
+                        context.recreate()
                     }
                 }
             } catch (e: Exception) {

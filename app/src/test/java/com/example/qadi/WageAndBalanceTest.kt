@@ -3,27 +3,25 @@ package com.example.qadi
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.AlQadiApplication
-import com.example.data.local.AppDatabase
 import com.example.data.local.entity.EmployeeEntity
 import com.example.data.local.entity.WageRecordEntity
 import com.example.data.local.entity.WithdrawalEntity
+import com.example.data.local.entity.AdjustmentEntity
 import com.example.data.repository.EmployeeRepository
 import com.example.data.repository.FinanceRepository
 import com.example.data.repository.WageRepository
 import com.example.domain.model.DayType
+import com.example.domain.model.AdjustmentType
 import com.example.ui.viewmodels.ReportViewModel
 import com.example.ui.viewmodels.WageViewModel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLooper
 import java.lang.reflect.Method
 import kotlinx.coroutines.flow.first
 
@@ -52,8 +50,6 @@ class WageAndBalanceTest {
 
     @Test
     fun testWageCalculationsBasedOnDayType() {
-        // اختبار حساب أجر اليوم بناءً على الحالة: 
-        // (يوم كامل = الأجر كاملاً | نصف يوم = 50% | ساعات محددة بناءً على قيمة الساعة ميكانيكياً | غياب = 0).
         val method: Method = WageViewModel::class.java.getDeclaredMethod(
             "calculateWageAmount",
             Double::class.java,
@@ -64,28 +60,110 @@ class WageAndBalanceTest {
 
         val baseWage = 10000.0
 
-        // 1. يوم كامل = الأجر كاملاً
         val fullDayWage = method.invoke(wageViewModel, baseWage, DayType.FULL_DAY, null) as Double
         assertEquals(10000.0, fullDayWage, 0.01)
 
-        // 2. نصف يوم = 50%
         val halfDayWage = method.invoke(wageViewModel, baseWage, DayType.HALF_DAY, null) as Double
         assertEquals(5000.0, halfDayWage, 0.01)
 
-        // 3. ساعات محددة بناءً على قيمة الساعة (يوم كامل = 8 ساعات)
-        // 4 ساعات عمل = 5000
         val hourlyWage = method.invoke(wageViewModel, baseWage, DayType.HOURS, 4.0) as Double
         assertEquals(5000.0, hourlyWage, 0.01)
 
-        // 4. غياب = 0
         val absentWage = method.invoke(wageViewModel, baseWage, DayType.ABSENT, null) as Double
         assertEquals(0.0, absentWage, 0.01)
     }
 
     @Test
-    fun testTotalNetPayableCalculationAndConstraints() = runTest {
-        // اختبار مؤقت معطل بسبب مشكلة مزامنة الـ Flows والـ Coroutines في بيئة الاختبار
-        // حيث أن StateFlow يتطلب تفاصيل إضافية في Robolectric لضمان تحديث القيمة قبل الـ assert
-        assert(true)
+    fun testTotalNetPayableCalculationAndConstraints() = runBlocking {
+        // إنشاء موظف بأجر يومي معروف
+        val empId = employeeRepo.insertEmployee(
+            EmployeeEntity(
+                name = "Test Employee", jobTitle = "Tester", currentDailyWage = 10000.0, phone = "", nationalId = null, department = null, hireDate = System.currentTimeMillis(), photoPath = null, notes = null, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
+            )
+        )
+
+        // يومين كاملين
+        wageRepo.insertWageRecord(
+            WageRecordEntity(
+                employeeId = empId, wageDate = 1000L, dayType = DayType.FULL_DAY, hoursWorked = null, calculatedAmount = 10000.0, finalAmount = 10000.0, notes = null, createdAt = 1000L, updatedAt = 1000L
+            )
+        )
+        wageRepo.insertWageRecord(
+            WageRecordEntity(
+                employeeId = empId, wageDate = 2000L, dayType = DayType.FULL_DAY, hoursWorked = null, calculatedAmount = 10000.0, finalAmount = 10000.0, notes = null, createdAt = 2000L, updatedAt = 2000L
+            )
+        )
+
+        // مكافأة
+        financeRepo.insertAdjustment(
+            AdjustmentEntity(
+                employeeId = empId, amount = 5000.0, adjustmentDate = 3000L, type = AdjustmentType.BONUS, reason = null, createdAt = 3000L
+            )
+        )
+
+        // سحب
+        financeRepo.insertWithdrawal(
+            WithdrawalEntity(
+                employeeId = empId, amount = 2000.0, withdrawalDate = 4000L, withdrawalType = com.example.domain.model.WithdrawalType.CASH, description = null, createdAt = 4000L, updatedAt = 4000L
+            )
+        )
+
+        // خصم
+        financeRepo.insertAdjustment(
+            AdjustmentEntity(
+                employeeId = empId, amount = 1000.0, adjustmentDate = 5000L, type = AdjustmentType.DEDUCTION, reason = null, createdAt = 5000L
+            )
+        )
+
+        ShadowLooper.idleMainLooper()
+
+        val netPayable = reportViewModel.getNetPayableForEmployee(empId)
+        assertEquals(22000.0, netPayable, 0.01)
+    }
+
+    @Test
+    fun testDayTypeCustom() = runBlocking {
+        val empId = employeeRepo.insertEmployee(
+            EmployeeEntity(
+                name = "Test Employee", jobTitle = "Tester", currentDailyWage = 10000.0, phone = "", nationalId = null, department = null, hireDate = System.currentTimeMillis(), photoPath = null, notes = null, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
+            )
+        )
+
+        wageViewModel.recordWage(
+            employeeId = empId,
+            date = 1000L,
+            dayType = DayType.CUSTOM,
+            finalAmountOverride = 7500.0
+        )
+        
+        ShadowLooper.idleMainLooper()
+
+        val record = wageRepo.getRecordsInRange(0L, 2000L).first().find { it.employeeId == empId }
+        requireNotNull(record)
+        assertEquals(7500.0, record.finalAmount, 0.01)
+        assertEquals(0.0, record.calculatedAmount, 0.01)
+    }
+
+    @Test
+    fun testFinalAmountOverride() = runBlocking {
+        val empId = employeeRepo.insertEmployee(
+            EmployeeEntity(
+                name = "Test Employee", jobTitle = "Tester", currentDailyWage = 10000.0, phone = "", nationalId = null, department = null, hireDate = System.currentTimeMillis(), photoPath = null, notes = null, createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()
+            )
+        )
+
+        wageViewModel.recordWage(
+            employeeId = empId,
+            date = 1000L,
+            dayType = DayType.FULL_DAY,
+            finalAmountOverride = 12000.0
+        )
+        
+        ShadowLooper.idleMainLooper()
+
+        val record = wageRepo.getRecordsInRange(0L, 2000L).first().find { it.employeeId == empId }
+        requireNotNull(record)
+        assertEquals(10000.0, record.calculatedAmount, 0.01)
+        assertEquals(12000.0, record.finalAmount, 0.01)
     }
 }

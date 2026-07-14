@@ -16,7 +16,11 @@ object DatabaseHelper {
             if (!dbFile.exists()) return false
 
             val inputStream = FileInputStream(dbFile)
-            val outputStream = context.contentResolver.openOutputStream(destinationUri)
+            val outputStream = if (destinationUri.scheme == "file") {
+                FileOutputStream(destinationUri.path)
+            } else {
+                context.contentResolver.openOutputStream(destinationUri)
+            }
 
             if (outputStream != null) {
                 copyStream(inputStream, outputStream)

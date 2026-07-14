@@ -1,6 +1,5 @@
 package com.example.qadi
 
-import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.AlQadiApplication
 import com.example.data.local.entity.EmployeeEntity
@@ -14,7 +13,13 @@ import com.example.domain.model.DayType
 import com.example.domain.model.AdjustmentType
 import com.example.ui.viewmodels.ReportViewModel
 import com.example.ui.viewmodels.WageViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -23,7 +28,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.lang.reflect.Method
-import kotlinx.coroutines.flow.first
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -37,6 +41,7 @@ class WageAndBalanceTest {
 
     @Before
     fun setup() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
         val context = ApplicationProvider.getApplicationContext<AlQadiApplication>()
         val container = context.container
         
@@ -46,6 +51,11 @@ class WageAndBalanceTest {
         
         wageViewModel = WageViewModel(wageRepo, employeeRepo)
         reportViewModel = ReportViewModel(employeeRepo, wageRepo, financeRepo)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
@@ -138,8 +148,8 @@ class WageAndBalanceTest {
         
         ShadowLooper.idleMainLooper()
 
-        val record = wageRepo.getRecordsInRange(0L, 2000L).first().find { it.employeeId == empId }
-        requireNotNull(record)
+        val record = wageRepo.getRecordsInRange(0L, 2000L).first { it.isNotEmpty() }.find { it.employeeId == empId }
+        requireNotNull(record) { "Record not found! All records: ${wageRepo.getRecordsInRange(0L, 2000L).first()}" }
         assertEquals(7500.0, record.finalAmount, 0.01)
         assertEquals(0.0, record.calculatedAmount, 0.01)
     }
@@ -161,8 +171,8 @@ class WageAndBalanceTest {
         
         ShadowLooper.idleMainLooper()
 
-        val record = wageRepo.getRecordsInRange(0L, 2000L).first().find { it.employeeId == empId }
-        requireNotNull(record)
+        val record = wageRepo.getRecordsInRange(0L, 2000L).first { it.isNotEmpty() }.find { it.employeeId == empId }
+        requireNotNull(record) { "Record not found! All records: ${wageRepo.getRecordsInRange(0L, 2000L).first()}" }
         assertEquals(10000.0, record.calculatedAmount, 0.01)
         assertEquals(12000.0, record.finalAmount, 0.01)
     }

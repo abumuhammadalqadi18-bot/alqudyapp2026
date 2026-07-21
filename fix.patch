@@ -1,0 +1,15 @@
+--- app/src/main/java/com/example/ui/screens/reports/ReportScreen.kt
++++ app/src/main/java/com/example/ui/screens/reports/ReportScreen.kt
+@@ -367,11 +367,6 @@
+         pendingExportName = name
+         previewPdfFile = tempFile
+     }
+-
+-    val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->ogoUri,
+-                sealUriString = state.settings.sealUri,
+-                signatureUriString = state.settings.signatureUri
+-            )
+-        }
+-    }
+ 
+     val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
